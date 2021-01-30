@@ -4,8 +4,9 @@ burstEndIndex = 1470;
 %Burst loop
 for burstCtr = burstStartIndex:burstEndIndex
     
+    tiltDataLong = WADZPreprocessing();
     %Import a burst into the workspace
-    [burstDatenums,burstBeamVelocities] = importWADZBurst(burstCtr)
+    [burstDatenums,burstBeamVelocities] = importWADZBurst(burstCtr,tiltDataLong)
 
     %Calculate TKE for burst
     
