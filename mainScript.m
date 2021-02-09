@@ -1,26 +1,54 @@
 %Anything that needs to happen before the main loop over our shorter
 %averaging periods goes here.
-tiltDataLong = WADZPreprocessing();
 
-burstStartIndex = 10;
-burstEndIndex = 20;
+%For the original WADZ data set, preprocessing tasks are gathered into the
+%function WADZPreprocessing, which includes:
+% - Loading and formatting tilt data
+tiltDataLong = WADZPreprocessing();
+%Initialise some key parameters
+paramStruc.beamAngle = 25*pi/180; paramStruc.anisoParam = 0.1684;
+paramStruc.blankDist = 1.89; paramStruc.binVertSize = 0.6;
+%The maximum number of depth bins should be known ahead of time in order to
+%preallocate array sizes for depth-varying data. If the user does not know,
+%it is better to err on the side of too many bins than too few, as the
+%function call will fail if the preallocated arrays are too small.
+maxDepthBins = 91;
+
+%Preallocate the whole-record variables based on the number of bursts being
+%analysed
+burstStartIndex = 5;
+burstEndIndex = 1470;
+wholeRecordEnsNos = nan((burstEndIndex - burstStartIndex + 1),2);
+wholeRecordDatenums = nan((burstEndIndex - burstStartIndex + 1),2);
+wholeRecordTKE = nan((burstEndIndex - burstStartIndex + 1),maxDepthBins);
 
 %Burst loop
 for burstCtr = burstStartIndex:burstEndIndex
-    tic
     %Import a burst into the workspace
-    [burstDatenums,burstBeamVelocities] = importWADZBurst(burstCtr,tiltDataLong);
+    [burstEnsembleNos,burstDatenums,burstBeamVelocities] = importWADZBurst(burstCtr,tiltDataLong);
+    wholeRecordEnsNos(burstCtr - burstStartIndex + 1) = [burstEnsembleNos(1) burstEnsembleNos(end)];
+    wholeRecordDatenums(burstCtr - burstStartIndex + 1) = [burstDatenums(1) burstDatenums(end)];
 
-    %Calculate TKE for burst
-    
     %Carry out WSST
     %Filter
     %IWSST
-
-    %Calc burst turbulence
     
-    toc
-%End burst loop
+    %Calculate TKE for unfiltered burst velocities
+    wholeRecordTKE(burstCtr - burstStartIndex + 1,:) = calcBurst4BeamTKE(burstBeamVelocities,paramStruc);
+    
+    %CalculateTKE for filtered burst velocities
+    
+    if rem(burstCtr,10) == 0,
+        fprintf("Burst # is %d \r",burstCtr)
+    end
+    %End burst loop
 end
 
 %Carry out statistical filter
+%We assume the wave pseudo-TKE to be a function of depth from surface,
+%rather than height above bed. If the EOF is to capture this, we need to
+%re-zero the dataset to reflect this, such that each point corresponds to
+%the same number of bins below the surface rather than the same number of
+%bins above the bed.
+%For the WADZ data set, we use the pre-processed depth data in order to
+%calculate the mean depth for a given burst.
