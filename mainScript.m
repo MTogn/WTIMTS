@@ -18,23 +18,23 @@ maxDepthBins = 91;
 %analysed
 burstStartIndex = 5;
 burstEndIndex = 1470;
-wholeRecordEnsNos = nan((burstEndIndex - burstStartIndex + 1),2);
-wholeRecordDatenums = nan((burstEndIndex - burstStartIndex + 1),2);
-wholeRecordTKE = nan((burstEndIndex - burstStartIndex + 1),maxDepthBins);
+wholeRecordEnsNos = nan(burstEndIndex,2);
+wholeRecordDatenums = nan(burstEndIndex,2);
+wholeRecordTKE = nan(burstEndIndex,maxDepthBins);
 
 %Burst loop
 for burstCtr = burstStartIndex:burstEndIndex
     %Import a burst into the workspace
     [burstEnsembleNos,burstDatenums,burstBeamVelocities] = importWADZBurst(burstCtr,tiltDataLong);
-    wholeRecordEnsNos(burstCtr - burstStartIndex + 1) = [burstEnsembleNos(1) burstEnsembleNos(end)];
-    wholeRecordDatenums(burstCtr - burstStartIndex + 1) = [burstDatenums(1) burstDatenums(end)];
+    wholeRecordEnsNos(burstCtr,:) = [burstEnsembleNos(1) burstEnsembleNos(end)];
+    wholeRecordDatenums(burstCtr,:) = [burstDatenums(1) burstDatenums(end)];
 
     %Carry out WSST
     %Filter
     %IWSST
     
     %Calculate TKE for unfiltered burst velocities
-    wholeRecordTKE(burstCtr - burstStartIndex + 1,:) = calcBurst4BeamTKE(burstBeamVelocities,paramStruc);
+    wholeRecordTKE(burstCtr,:) = calcBurst4BeamTKE(burstBeamVelocities,paramStruc);
     
     %CalculateTKE for filtered burst velocities
     
@@ -52,3 +52,6 @@ end
 %bins above the bed.
 %For the WADZ data set, we use the pre-processed depth data in order to
 %calculate the mean depth for a given burst.
+[burstDepths,burstMaxBins] = demozoneDepthPreprocessing(paramStruc,wholeRecordEnsNos,burstStartIndex,burstEndIndex);
+surfRelativeTKE = wholeRecordBed2Surf(wholeRecordTKE,burstMaxBins,burstStartIndex,burstEndIndex);
+

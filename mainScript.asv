@@ -5,8 +5,9 @@
 %function WADZPreprocessing, which includes:
 % - Loading and formatting tilt data
 tiltDataLong = WADZPreprocessing();
-%Initialise some key parameters for calculating the TKE
-TKECalcParams.beamAngle = 25*pi/180; TKECalcParams.anisoParam = 0.1684;
+%Initialise some key parameters
+paramStruc.beamAngle = 25*pi/180; paramStruc.anisoParam = 0.1684;
+paramStruc.blankDist = 1.89; paramStruc.binVertSize = 0.6;
 %The maximum number of depth bins should be known ahead of time in order to
 %preallocate array sizes for depth-varying data. If the user does not know,
 %it is better to err on the side of too many bins than too few, as the
@@ -17,26 +18,30 @@ maxDepthBins = 91;
 %analysed
 burstStartIndex = 5;
 burstEndIndex = 1470;
-wholeRecordDatenums = nan((burstEndIndex - burstStartIndex + 1),1);
-wholeRecordTKE = nan((burstEndIndex - burstStartIndex + 1),maxDepthBins);
+wholeRecordEnsNos = nan(burstEndIndex,2);
+wholeRecordDatenums = nan(burstEndIndex,2);
+wholeRecordTKE = nan(burstEndIndex,maxDepthBins);
 
 %Burst loop
 for burstCtr = burstStartIndex:burstEndIndex
-    tic
     %Import a burst into the workspace
-    [burstDatenums,burstBeamVelocities] = importWADZBurst(burstCtr,tiltDataLong);
+    [burstEnsembleNos,burstDatenums,burstBeamVelocities] = importWADZBurst(burstCtr,tiltDataLong);
+    wholeRecordEnsNos(burstCtr,:) = [burstEnsembleNos(1) burstEnsembleNos(end)];
+    wholeRecordDatenums(burstCtr,:) = [burstDatenums(1) burstDatenums(end)];
 
     %Carry out WSST
     %Filter
     %IWSST
     
     %Calculate TKE for unfiltered burst velocities
-    wholeRecordTKE(burstCtr - burstStartIndex + 1,:) = calcBurst4BeamTKE(burstBeamVelocities,TKECalcParams);
+    wholeRecordTKE(burstCtr,:) = calcBurst4BeamTKE(burstBeamVelocities,paramStruc);
     
     %CalculateTKE for filtered burst velocities
     
-    toc
-%End burst loop
+    if rem(burstCtr,10) == 0,
+        fprintf("Burst # is %d \r",burstCtr)
+    end
+    %End burst loop
 end
 
 %Carry out statistical filter
@@ -45,3 +50,8 @@ end
 %re-zero the dataset to reflect this, such that each point corresponds to
 %the same number of bins below the surface rather than the same number of
 %bins above the bed.
+%For the WADZ data set, we use the pre-processed depth data in order to
+%calculate the mean depth for a given burst.
+[burstDepths,burstMaxBins] = demozoneDepthPreprocessing(paramStruc,wholeRecordEnsNos,burstStartIndex,burstEndIndex);
+surfRelativeTKE = wholeRecordBed2Surf(
+
