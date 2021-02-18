@@ -55,3 +55,10 @@ end
 [burstDepths,burstMaxBins] = demozoneDepthPreprocessing(paramStruc,wholeRecordEnsNos,burstStartIndex,burstEndIndex);
 surfRelativeTKE = wholeRecordBed2Surf(wholeRecordTKE,burstMaxBins,burstStartIndex,burstEndIndex);
 
+%Once the TKE array has been zeroed to the surface, we can perform the EOF
+%analysis using the function EOF. numEOFs restricts the number of basis
+%functions that are used in the analysis, as higher modes are unlikely to
+%contain useful or meaningful information.
+
+numEOFs = 10;
+[TKEEigenvals,TKEEigenvalsNormd,TKEEOFs,TKEExpanCoeffs,TKETruncnErr] = EOFWrapper(surfRelativeTKE(burstStartIndex:burstEndIndex,:),numEOFs);
