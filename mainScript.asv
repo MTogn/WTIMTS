@@ -61,7 +61,13 @@ surfRelativeTKE = wholeRecordBed2Surf(wholeRecordTKE,burstMaxBins,burstStartInde
 %contain useful or meaningful information.
 
 numEOFs = 10;
-[TKEEigenvals,TKEEigenvalsNormd,TKEEOFs,TKEExpanCoeffs,TKETruncnErr] = EOF(surfRelativeTKE(burstStartIndex:burstEndIndex,:),numEOFs);
-[TKEEigenvals,eigenSortList] = sort(TKEEigenvals,'descend');
-TKEEOFs = TKEEOFs(:,eigenSortList);
-TKEEigenvalsNormd = TKEEigenvals/sum(TKEEigenvals);
+[TKEEigenvals,TKEEigenvalsNormd,TKEEOFs,TKEExpanCoeffs,TKETruncnErr] = EOFWrapper(surfRelativeTKE(burstStartIndex:burstEndIndex,:),numEOFs);
+
+%EOF can capture the time-varying pseudo-TKE introduced by wave action, but
+%it cannot capture any bias introduced to the mean TKE estimate. In order
+%to estimate what part of the mean TKE estimate is due to wave action, we
+%recalculate the mean using only bursts when waves are not very strong
+%i.e., when the EC of the 1st EOF is <0. The function that performs the
+%separation accepts the whole-deployment TKE records and the expansion
+%coefficient of ONLY the first EOF as arguments
+[meanTKEWave,meanTKETurb] = separateWaveTurbMeanTKE(surfRelativeTKE(burstStartIndex:burstEndIndex),TKEExpanCoeffs(:,1))
