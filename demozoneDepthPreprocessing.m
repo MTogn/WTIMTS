@@ -9,5 +9,5 @@ burstMaxBins = burstDepths;
 for burstCtr = burstStartIndex:burstEndIndex
    burstStartEns = burstEnsNoLims(burstCtr,1); burstEndEns = burstEnsNoLims(burstCtr,2);
    burstDepths(burstCtr) = mean(demozoneRawDepth(burstStartEns:burstEndEns,2));
-   burstMaxBins(burstCtr) = 1 + floor((burstDepths(burstCtr)*cos(depthParameters.beamAngle) - depthParameters.blankDist)/0.6);
+   burstMaxBins(burstCtr) = 1 + floor((burstDepths(burstCtr)*cos(depthParameters.beamAngle) - depthParameters.blankDist)/depthParameters.binVertSize);
 end

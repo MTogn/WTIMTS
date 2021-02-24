@@ -8,6 +8,7 @@ tiltDataLong = WADZPreprocessing();
 %Initialise some key parameters
 paramStruc.beamAngle = 25*pi/180; paramStruc.anisoParam = 0.1684;
 paramStruc.blankDist = 1.89; paramStruc.binVertSize = 0.6;
+paramStruc.sampFreq = 2;
 %The maximum number of depth bins should be known ahead of time in order to
 %preallocate array sizes for depth-varying data. If the user does not know,
 %it is better to err on the side of too many bins than too few, as the
@@ -30,11 +31,17 @@ for burstCtr = burstStartIndex:burstEndIndex
     wholeRecordDatenums(burstCtr,:) = [burstDatenums(1) burstDatenums(end)];
 
     %Carry out WSST
+    [specFilteredWaveVelocities.beam1,specFilteredNonwaveVelocities.beam1] = spectralFilter(burstBeamVelocities.beam1,paramStruc.sampFreq,ridgeTriangleNotch);
+    [specFilteredWaveVelocities.beam2,specFilteredNonwaveVelocities.beam2] = spectralFilter(burstBeamVelocities.beam2,paramStruc.sampFreq,ridgeTriangleNotch);
+    [specFilteredWaveVelocities.beam3,specFilteredNonwaveVelocities.beam3] = spectralFilter(burstBeamVelocities.beam3,paramStruc.sampFreq,ridgeTriangleNotch);
+    [specFilteredWaveVelocities.beam4,specFilteredNonwaveVelocities.beam4] = spectralFilter(burstBeamVelocities.beam4,paramStruc.sampFreq,ridgeTriangleNotch);
+    [specFilteredWaveVelocities.beam5,specFilteredNonwaveVelocities.beam5] = spectralFilter(burstBeamVelocities.beam5,paramStruc.sampFreq,ridgeTriangleNotch);
     %Filter
     %IWSST
     
     %Calculate TKE for unfiltered burst velocities
     wholeRecordTKE(burstCtr,:) = calcBurst4BeamTKE(burstBeamVelocities,paramStruc);
+    
     
     %CalculateTKE for filtered burst velocities
     
@@ -43,6 +50,7 @@ for burstCtr = burstStartIndex:burstEndIndex
     end
     %End burst loop
 end
+%% 
 
 %Carry out statistical filter
 %We assume the wave pseudo-TKE to be a function of depth from surface,
@@ -56,18 +64,21 @@ end
 surfRelativeTKE = wholeRecordBed2Surf(wholeRecordTKE,burstMaxBins,burstStartIndex,burstEndIndex);
 
 %Once the TKE array has been zeroed to the surface, we can perform the EOF
-%analysis using the function EOF. numEOFs restricts the number of basis
-%functions that are used in the analysis, as higher modes are unlikely to
-%contain useful or meaningful information.
-
-numEOFs = 10;
+%analysis using the function EOFWrapper. numEOFs restricts the number of
+%basis functions that are used in the analysis, as higher modes are
+%unlikely to contain useful or meaningful information. EOFWrapper includes
+%a call to the main function EOF that actually performs the mode
+%decomposition, plus some data hygiene and normalisation. Small EOF numbers
+%can lead to the first EOFs/ECs being the opposite sign to what is expected
+%- reason for this is unclear. Stick to larger numbers for now.
+numEOFs = size(surfRelativeTKE,2);
 [TKEEigenvals,TKEEigenvalsNormd,TKEEOFs,TKEExpanCoeffs,TKETruncnErr] = EOFWrapper(surfRelativeTKE(burstStartIndex:burstEndIndex,:),numEOFs);
 
-%EOF can capture the time-varying pseudo-TKE introduced by wave action, but
-%it cannot capture any bias introduced to the mean TKE estimate. In order
-%to estimate what part of the mean TKE estimate is due to wave action, we
-%recalculate the mean using only bursts when waves are not very strong
-%i.e., when the EC of the 1st EOF is <0. The function that performs the
-%separation accepts the whole-deployment TKE records and the expansion
-%coefficient of ONLY the first EOF as arguments.
-[meanTKEWave,meanTKETurb] = separateWaveTurbMeanTKE(surfRelativeTKE(burstStartIndex:burstEndIndex,:),TKEExpanCoeffs(:,1));
+%Some preprocessing of date/depth arrays so we have a unified way of
+%plotting data that depends on time and/or depth.
+depthBins = size(surfRelativeTKE,2);
+plotParams.timeVec = wholeRecordDatenums(burstStartIndex:burstEndIndex,1);
+meanDepth = nanmean(burstDepths); sidelobeDepth = meanDepth*(1 - cos(paramStruc.beamAngle));
+plotParams.depthVec = -paramStruc.binVertSize*((depthBins - 1):-1:0) - sidelobeDepth;
+
+[surfRelTKEWave,surfRelTKETurb] = singleEOFModeTKEDecomposition(surfRelativeTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1),1,plotParams);
