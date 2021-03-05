@@ -8,10 +8,16 @@ if nargin < 3,
     filterParameters.filterDepth = 0.9;
 end
 
+nonwaveTransformComponent = velocityWSST;
+waveTransformComponent = zeros(size(velocityWSST));
 %Ridge finding
 freqRidge = wsstridge(velocityWSST,wsstFreqVec);
 for tCtr = 1:size(velocityWSST,2)
     filterMask = ones(length(wsstFreqVec),1);
     waveFreq = freqRidge(tCtr);
-    filterMask(wsstFreqVec > (waveFreq - filterParameters.halfWidth) & testFreqVec <= waveFreq) = ...
-            1 - filterDepth*(testFreqVec(testFreqVec > (waveFreq - filterHalfWidth) & testFreqVec <= waveFreq) - (waveFreq - filterHalfWidth))/filterHalfWidth;
+    filterMask(wsstFreqVec > (waveFreq - filterParameters.halfWidth) & wsstFreqVec <= waveFreq) = ...
+            1 - filterDepth*(wsstFreqVec(wsstFreqVec > (waveFreq - filterHalfWidth) & wsstFreqVec <= waveFreq) - (waveFreq - filterHalfWidth))/filterHalfWidth;
+    filterMask(wsstFreqVec > waveFreq & wsstFreqVec < (waveFreq + filterHalfWidth)) = ...
+        1 - filterDepth*((waveFreq + filterHalfWidth) - wsstFreqVec(wsstFreqVec > waveFreq & wsstFreqVec < (waveFreq + filterHalfWidth)))/filterHalfWidth;
+    nonwaveTransformComponent(:,tCtr) = filterMask.*velocityWSST(:,tCtr);
+    waveTransformComponent(:,tCtr) = velocityWSST(:,tCtr) - nonwaveTransformComponent(:,tCtr);

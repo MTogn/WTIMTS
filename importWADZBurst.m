@@ -43,10 +43,9 @@ burstVelocityData.beam5 = NaNFilterv2(burstVelocityData.beam5); burstVelocityDat
 
 %We must also filter for times of excess tilt. For the WADZ data, tilt data
 %is stored in a file in the immediate parent directory of the directory
-%containing the burst data. I think it is likely better to keep the
-%whole-record tilt data in the workspace rather than load the file
-%containing the data with each call to this function, but this may need to
-%be revised.
+%containing the burst data. It is better to keep the whole-record tilt data
+%in the workspace rather than load the file containing the data with each
+%call to this function.
 %The tilt data replicates the ensemble numbers and time/date
 %data included in the burst files containing the velocity records; only one
 %of these is needed to find the portion of the whole-deployment tilt data
