@@ -13,7 +13,7 @@ paramStruc.sampFreq = 2;
 %Preallocate the whole-record variables based on the number of bursts being
 %analysed
 burstStartIndex = 5;
-burstEndIndex = 50;
+burstEndIndex = 1470;
 wholeRecordEnsNos = nan(burstEndIndex,2);
 wholeRecordDatenums = nan(burstEndIndex,2);
 %It is helpful to know the maximum possible number of bins in advance to
@@ -83,12 +83,26 @@ numEOFs = size(surfRelativeTKE,2);
 
 %Some preprocessing of date/depth arrays so we have a unified way of
 %plotting data that depends on time and/or depth.
-depthBins = size(surfRelativeTKE,2);
+surfZeroDepthBins = size(surfRelativeTKE,2);
+meanSurfZeroDepthBins = max(burstMaxBins(burstStartIndex:burstEndIndex));
 plotParams.timeVec = wholeRecordDatenums(burstStartIndex:burstEndIndex,1);
 meanDepth = nanmean(burstDepths); sidelobeDepth = meanDepth*(1 - cos(paramStruc.beamAngle));
-plotParams.depthVec = -paramStruc.binVertSize*((depthBins - 1):-1:0) - sidelobeDepth;
+plotParams.surfRelDepthVec = -paramStruc.binVertSize*((surfZeroDepthBins - 1):-1:0) - sidelobeDepth;
+plotParams.meanSurfRelDepthVec = paramStruc.binVertSize*(0:1:(meanSurfZeroDepthBins - 1)) + (paramStruc.blankDist - meanDepth);
 
-[surfRelTKEWave,surfRelTKETurb] = singleEOFModeTKEDecomposition(surfRelativeTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1),1,plotParams);
+[surfRelTKETurb,surfRelTKEWave] = singleEOFModeTKEDecomposition(surfRelativeTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1),0,plotParams);
+
+plotTKE(wholeRecordTKE(burstStartIndex:burstEndIndex,1:meanSurfZeroDepthBins),plotParams)
+bedRelTKETurb = wholeRecordSurf2Bed([nan(burstStartIndex - 1,size(surfRelTKETurb,2)); surfRelTKETurb],burstMaxBins,burstStartIndex,burstEndIndex);
+plotTKE(bedRelTKETurb(burstStartIndex:burstEndIndex,:),plotParams)
 %%
 %Now repeat the statistical filter for the TKE dataset that has already
 %undergone spectral filtering.
+surfRelativeFilteredTKE = wholeRecordBed2Surf(specFilteredNonwaveTKE,burstMaxBins,burstStartIndex,burstEndIndex)
+
+numEOFs = size(surfRelativeTKE,2);
+[TKEEigenvals,TKEEigenvalsNormd,TKEEOFs,TKEExpanCoeffs,TKETruncnErr] = EOFWrapper(surfRelativeFilteredTKE(burstStartIndex:burstEndIndex,:),numEOFs);
+
+[surfRelFilteredTKETurb,surfRelFilteredTKEWave] = singleEOFModeTKEDecomposition(surfRelativeFilteredTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1),1,plotParams);
+bedRelFilteredTKETurb = wholeRecordSurf2Bed([nan(burstStartIndex - 1,size(surfRelTKETurb,2)); surfRelFilteredTKETurb],burstMaxBins,burstStartIndex,burstEndIndex);
+plotTKE(bedRelFilteredTKETurb(burstStartIndex:burstEndIndex,:),plotParams)

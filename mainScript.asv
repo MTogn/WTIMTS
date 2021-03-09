@@ -16,6 +16,11 @@ burstStartIndex = 5;
 burstEndIndex = 1470;
 wholeRecordEnsNos = nan(burstEndIndex,2);
 wholeRecordDatenums = nan(burstEndIndex,2);
+%It is helpful to know the maximum possible number of bins in advance to
+%aid with preprocessing; if you don't know err on the side of caution
+%(i.e., a larger number of bins) to avoid assigning data to arrays that are
+%too small.
+maxBinNo = 91;
 
 %For the WADZ data set, we use the pre-processed depth data in order to
 %calculate the mean depth for a given burst. This allows us to ensure that
@@ -23,19 +28,18 @@ wholeRecordDatenums = nan(burstEndIndex,2);
 %interference range with unreliable data, or even to bins above the
 %surface.
 burstDepths = nan(burstEndIndex,1); burstMaxBins = nan(burstEndIndex,1);
-maxUsefulBin = max(burstMaxBins(burstStartIndex:burstEndIndex));
-wholeRecordTKE = nan(burstEndIndex,maxUsefulBin);
-specFilteredWaveTKE = nan(burstEndIndex,maxUsefulBin);
-specFilteredNonwaveTKE = nan(burstEndIndex,maxUsefulBin);
+wholeRecordTKE = nan(burstEndIndex,maxBinNo);
+specFilteredWaveTKE = nan(burstEndIndex,maxBinNo);
+specFilteredNonwaveTKE = nan(burstEndIndex,maxBinNo);
 
 %Burst loop
 for burstCtr = burstStartIndex:burstEndIndex
     %Import a burst into the workspace
     [burstEnsembleNos,burstDatenums,burstBeamVelocities] = importWADZBurst(burstCtr,tiltDataLong);
-    [burstDepths(burstCtr),burstMaxBins(burstCtr)] = demozoneDepthPreprocessing(paramStruc,demozoneRawDepth,wholeRecordEnsNos,burstCtr);
-    burstBeamVelocities = truncateBeamVelocityDepthRange(burstBeamVelocities,burstMaxBins(burstCtr));
     wholeRecordEnsNos(burstCtr,:) = [burstEnsembleNos(1) burstEnsembleNos(end)];
     wholeRecordDatenums(burstCtr,:) = [burstDatenums(1) burstDatenums(end)];
+    [burstDepths(burstCtr),burstMaxBins(burstCtr)] = demozoneDepthPreprocessing(paramStruc,demozoneRawDepth,wholeRecordEnsNos(burstCtr,:),burstCtr);
+    burstBeamVelocities = truncateBeamVelocityDepthRange(burstBeamVelocities,burstMaxBins(burstCtr));
 
     %Carry out spectral filter
     [specFilteredWaveVelocities.beam1,specFilteredNonwaveVelocities.beam1] = spectralFilter(burstBeamVelocities.beam1,paramStruc.sampFreq,@ridgeTriangleNotch);
@@ -45,11 +49,11 @@ for burstCtr = burstStartIndex:burstEndIndex
 %     [specFilteredWaveVelocities.beam5,specFilteredNonwaveVelocities.beam5] = spectralFilter(burstBeamVelocities.beam5,paramStruc.sampFreq,@ridgeTriangleNotch);
     
     %Calculate TKE for unfiltered burst velocities
-    wholeRecordTKE(burstCtr,:) = calcBurst4BeamTKE(burstBeamVelocities,paramStruc);
+    wholeRecordTKE(burstCtr,1:burstMaxBins(burstCtr)) = calcBurst4BeamTKE(burstBeamVelocities,paramStruc);
     
     %Calculate TKE for filtered burst velocities
-    specFilteredWaveTKE(burstCtr,:) = calcBurst4BeamTKE(specFilteredWaveVelocities,paramStruc);
-    specFilteredNonwaveTKE(burstCtr,:) = calcBurst4BeamTKE(specFilteredNonwaveVelocities,paramStruc);
+    specFilteredWaveTKE(burstCtr,1:burstMaxBins(burstCtr)) = calcBurst4BeamTKE(specFilteredWaveVelocities,paramStruc);
+    specFilteredNonwaveTKE(burstCtr,1:burstMaxBins(burstCtr)) = calcBurst4BeamTKE(specFilteredNonwaveVelocities,paramStruc);
     
     if rem(burstCtr,10) == 0,
         fprintf("Burst # is %d \r",burstCtr)
@@ -82,9 +86,18 @@ numEOFs = size(surfRelativeTKE,2);
 depthBins = size(surfRelativeTKE,2);
 plotParams.timeVec = wholeRecordDatenums(burstStartIndex:burstEndIndex,1);
 meanDepth = nanmean(burstDepths); sidelobeDepth = meanDepth*(1 - cos(paramStruc.beamAngle));
-plotParams.depthVec = -paramStruc.binVertSize*((depthBins - 1):-1:0) - sidelobeDepth;
+plotParams.surfRelDepthVec = -paramStruc.binVertSize*((depthBins - 1):-1:0) - sidelobeDepth;
+plotParams.meanSurfRelDepthVec = -paramStruc.binVertSize*((depthBins - 1):-1:0)
 
 [surfRelTKEWave,surfRelTKETurb] = singleEOFModeTKEDecomposition(surfRelativeTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1),1,plotParams);
+
+meanDepthVector = 1:1:depthBins
 %%
 %Now repeat the statistical filter for the TKE dataset that has already
 %undergone spectral filtering.
+surfRelativeFilteredTKE = wholeRecordBed2Surf(specFilteredNonwaveTKE,burstMaxBins,burstStartIndex,burstEndIndex)
+
+numEOFs = size(surfRelativeTKE,2);
+[TKEEigenvals,TKEEigenvalsNormd,TKEEOFs,TKEExpanCoeffs,TKETruncnErr] = EOFWrapper(surfRelativeFilteredTKE(burstStartIndex:burstEndIndex,:),numEOFs);
+
+[surfRelFilteredTKEWave,surfRelFilteredTKETurb] = singleEOFModeTKEDecomposition(surfRelativeFilteredTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1),1,plotParams);

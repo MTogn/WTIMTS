@@ -13,3 +13,5 @@ for recordCtr = recordStartNum:recordEndNum
     binsMoreThanMin = binsByRecord(recordCtr) - min(binsByRecord);
     surfRelativeVariable(recordCtr,:) = bedRelativeVariable(recordCtr,(binsMoreThanMin + 1):binsByRecord(recordCtr));
 end
+
+end

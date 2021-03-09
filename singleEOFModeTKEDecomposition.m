@@ -41,7 +41,7 @@ if nargin > 4,
             figure
         end
         
-        [depthArr,timeArr] = meshgrid(plotParams.depthVec,plotParams.timeVec)
+        [depthArr,timeArr] = meshgrid(plotParams.surfRelDepthVec,plotParams.timeVec)
         subplot(3,1,1), contourf(timeArr',depthArr',log10(TKE'))
         tempTKE = TKEWave; tempTKE(tempTKE < 0) = 0;
         subplot(3,1,2), contourf(timeArr',depthArr',log10(tempTKE'))
