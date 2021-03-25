@@ -13,7 +13,7 @@ paramStruc.sampFreq = 2;
 %Preallocate the whole-record variables based on the number of bursts being
 %analysed
 burstStartIndex = 5;
-burstEndIndex = 1470;
+burstEndIndex = 250;
 wholeRecordEnsNos = nan(burstEndIndex,2);
 wholeRecordDatenums = nan(burstEndIndex,2);
 %It is helpful to know the maximum possible number of bins in advance to
@@ -32,6 +32,7 @@ wholeRecordTKE = nan(burstEndIndex,maxBinNo);
 specFilteredWaveTKE = nan(burstEndIndex,maxBinNo);
 specFilteredNonwaveTKE = nan(burstEndIndex,maxBinNo);
 
+%%
 %Burst loop
 for burstCtr = burstStartIndex:burstEndIndex
     %Import a burst into the workspace
@@ -90,12 +91,29 @@ meanDepth = nanmean(burstDepths); sidelobeDepth = meanDepth*(1 - cos(paramStruc.
 plotParams.surfRelDepthVec = -paramStruc.binVertSize*((surfZeroDepthBins - 1):-1:0) - sidelobeDepth;
 plotParams.meanSurfRelDepthVec = paramStruc.binVertSize*(0:1:(meanSurfZeroDepthBins - 1)) + (paramStruc.blankDist - meanDepth);
 
-[surfRelTKETurb,surfRelTKEWave] = singleEOFModeTKEDecomposition(surfRelativeTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1),0,plotParams);
+[surfRelTKETurb,surfRelTKEWave] = singleEOFModeTKEDecomposition(surfRelativeTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1),1,plotParams);
 
-plotTKE(wholeRecordTKE(burstStartIndex:burstEndIndex,1:meanSurfZeroDepthBins),plotParams)
+[wholeRecordTKEFig,wholeRecordTKECont] = plotTKE(wholeRecordTKE(burstStartIndex:burstEndIndex,1:meanSurfZeroDepthBins),plotParams)
+title(get(wholeRecordTKEFig,'Children'),'Unfiltered ADCP estimate of TKE')
+%This part of the routine takes the outputs of the EOF decomposition and
+%returns it to a bed-zeroed format. Since some data was lost or excerpted
+%to make the original inputs to the EOF routine, we have to pad the output
+%with nans at the bed AND at the start, if there are any initial bursts
+%that are excluded.
 bedRelTKETurb = wholeRecordSurf2Bed([nan(burstStartIndex - 1,size(surfRelTKETurb,2)); surfRelTKETurb],burstMaxBins,burstStartIndex,burstEndIndex);
-plotTKE(bedRelTKETurb(burstStartIndex:burstEndIndex,:),plotParams)
+[EOFOnlyTurbFig,EOFOnlyTurbCont] = plotTKE(bedRelTKETurb(burstStartIndex:burstEndIndex,:),plotParams)
+title(get(EOFOnlyTurbFig,'Children'),'EOF-only estimate of turbulent k')
+bedRelTKEWave = wholeRecordSurf2Bed([nan(burstStartIndex - 1,size(surfRelTKEWave,2)); surfRelTKEWave],burstMaxBins,burstStartIndex,burstEndIndex);
+[EOFOnlyWaveFig,EOFOnlyWaveCont] = plotTKE(bedRelTKEWave(burstStartIndex:burstEndIndex,:),plotParams)
+title(get(EOFOnlyWaveFig,'Children'),'EOF-only estimate of wave pseudo-k')
 %%
+%Before proceeding to the EOF filter on the spectral-filtered data, we
+%visualise the TKE fields after going through a spectral filter only.
+[WSSTOnlyTurbFig,WSSTOnlyTurbCont] = plotTKE(specFilteredNonwaveTKE(burstStartIndex:burstEndIndex,1:meanSurfZeroDepthBins),plotParams)
+title(get(WSSTOnlyTurbFig,'Children'),'WSST-only estimate of turbulent k')
+[WSSTOnlyWaveFig,WSSTOnlyWaveCont] = plotTKE(specFilteredWaveTKE(burstStartIndex:burstEndIndex,1:meanSurfZeroDepthBins),plotParams)
+title(get(WSSTOnlyWaveFig,'Children'),'WSST-only estimate of wave pseudo-k')
+
 %Now repeat the statistical filter for the TKE dataset that has already
 %undergone spectral filtering.
 surfRelativeFilteredTKE = wholeRecordBed2Surf(specFilteredNonwaveTKE,burstMaxBins,burstStartIndex,burstEndIndex)
@@ -105,4 +123,10 @@ numEOFs = size(surfRelativeTKE,2);
 
 [surfRelFilteredTKETurb,surfRelFilteredTKEWave] = singleEOFModeTKEDecomposition(surfRelativeFilteredTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1),1,plotParams);
 bedRelFilteredTKETurb = wholeRecordSurf2Bed([nan(burstStartIndex - 1,size(surfRelTKETurb,2)); surfRelFilteredTKETurb],burstMaxBins,burstStartIndex,burstEndIndex);
-plotTKE(bedRelFilteredTKETurb(burstStartIndex:burstEndIndex,:),plotParams)
+[bothFilterTurbFig,bothFilterTurbCont] = plotTKE(bedRelFilteredTKETurb(burstStartIndex:burstEndIndex,:),plotParams)
+title(get(bothFilterTurbFig,'Children'),'Estimate of turbulent k with both filters')
+
+bedRelFilteredTKEWave = wholeRecordSurf2Bed([nan(burstStartIndex - 1,size(surfRelTKETurb,2)); surfRelFilteredTKEWave],burstMaxBins,burstStartIndex,burstEndIndex);
+bedRelFilteredTKEWave = bedRelFilteredTKEWave + specFilteredWaveTKE(:,1:max(burstMaxBins));
+[bothFilterWaveFig,bothFilterWaveCont] = plotTKE(bedRelFilteredTKEWave(burstStartIndex:burstEndIndex,:),plotParams)
+title(get(bothFilterWaveFig,'Children'),'Estimate of wave pseudo-k with both filters')

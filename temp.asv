@@ -1,4 +1,4 @@
-beamVelocity = burstBeamVelocities.beam1(:,50); 
+beamVelocity = burstBeamVelocities.beam1(:,30); 
 sampFreq = 2;
 [tempWSST,tempFreqVec] = wsst(beamVelocity,sampFreq);
 tempWSSTp1 = zeros(size(tempWSST)); tempWSSTp2 = tempWSSTp1;
@@ -40,12 +40,3 @@ set(gca,'XScale','log','YScale','log')
 
 figure, subplot(2,1,1), plot(beamVelocity,'k--','LineWidth',2), hold on, plot(beamVelyP1), plot(beamVelyP2), plot(reconstructedBeamVely), set(gca,'XLim',[0 120])
 subplot(2,1,2), plot(beamVelocity,'k--','LineWidth',2), hold on, plot(beamVelyP3), plot(beamVelyP4), plot(reconstructedBeamVelyv2), set(gca,'XLim',[0 120])
-
-%%
-set(wholeRecordTKECont,'LevelList',uniformLevelList); caxis(get(wholeRecordTKECont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]);
-set(EOFOnlyTurbCont,'LevelList',uniformLevelList); caxis(get(EOFOnlyTurbCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]);
-set(EOFOnlyWaveCont,'LevelList',uniformLevelList); caxis(get(EOFOnlyWaveCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]);
-set(WSSTOnlyTurbCont,'LevelList',uniformLevelList); caxis(get(WSSTOnlyTurbCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]);
-set(WSSTOnlyWaveCont,'LevelList',uniformLevelList); caxis(get(WSSTOnlyWaveCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]);
-set(bothFilterTurbCont,'LevelList',uniformLevelList); caxis(get(bothFilterTurbCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]);
-set(bothFilterWaveCont,'LevelList',uniformLevelList); caxis(get(bothFilterWaveCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]);
