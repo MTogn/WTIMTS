@@ -42,10 +42,19 @@ figure, subplot(2,1,1), plot(beamVelocity,'k--','LineWidth',2), hold on, plot(be
 subplot(2,1,2), plot(beamVelocity,'k--','LineWidth',2), hold on, plot(beamVelyP3), plot(beamVelyP4), plot(reconstructedBeamVelyv2), set(gca,'XLim',[0 120])
 
 %%
-set(wholeRecordTKECont,'LevelList',uniformLevelList); caxis(get(wholeRecordTKECont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]);
-set(EOFOnlyTurbCont,'LevelList',uniformLevelList); caxis(get(EOFOnlyTurbCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]);
-set(EOFOnlyWaveCont,'LevelList',uniformLevelList); caxis(get(EOFOnlyWaveCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]);
-set(WSSTOnlyTurbCont,'LevelList',uniformLevelList); caxis(get(WSSTOnlyTurbCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]);
-set(WSSTOnlyWaveCont,'LevelList',uniformLevelList); caxis(get(WSSTOnlyWaveCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]);
-set(bothFilterTurbCont,'LevelList',uniformLevelList); caxis(get(bothFilterTurbCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]);
-set(bothFilterWaveCont,'LevelList',uniformLevelList); caxis(get(bothFilterWaveCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]);
+%Common scaling for contour plots + corresponding colorbars
+set(wholeRecordTKECont,'LevelList',uniformLevelList); caxis(get(wholeRecordTKECont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]), colorbar;
+set(EOFOnlyTurbCont,'LevelList',uniformLevelList); caxis(get(EOFOnlyTurbCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]), colorbar;
+set(EOFOnlyWaveCont,'LevelList',uniformLevelList); caxis(get(EOFOnlyWaveCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]), colorbar;
+set(WSSTOnlyTurbCont,'LevelList',uniformLevelList); caxis(get(WSSTOnlyTurbCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]), colorbar;
+set(WSSTOnlyWaveCont,'LevelList',uniformLevelList); caxis(get(WSSTOnlyWaveCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]), colorbar;
+set(bothFilterTurbCont,'LevelList',uniformLevelList); caxis(get(bothFilterTurbCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]), colorbar;
+set(bothFilterWaveCont,'LevelList',uniformLevelList); caxis(get(bothFilterWaveCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]), colorbar;
+set(wavePseudoTurbCont,'LevelList',uniformLevelList); caxis(get(wavePseudoTurbCont,'Parent'),[uniformLevelList(1) uniformLevelList(end)]), colorbar;
+
+%%
+%Testing wsst magnitudes for a magnitude test on the filter
+for ctr = 1:size(burstBeamVelocities.beam1,2)
+    [tempWSSTArrays{ctr},tempWSSTFreqVec] = wsst(burstBeamVelocities.beam1(:,ctr),paramStruc.sampFreq);
+    maxWSST(ctr) = max(max(abs(tempWSSTArrays{ctr})));
+end

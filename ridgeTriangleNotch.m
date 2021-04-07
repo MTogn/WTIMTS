@@ -4,8 +4,10 @@ function [waveTransformComponent,nonwaveTransformComponent] = ridgeTriangleNotch
 %width, max filter intensity etc.)
 if nargin < 3,
     %Specify default filter parameters
-    filterParameters.halfWidth = 2.5*(max(wsstFreqVec) - min(wsstFreqVec))/100;
+    filterParameters.halfWidth = 5*(max(wsstFreqVec) - min(wsstFreqVec))/100;
     filterParameters.filterDepth = 0.9;
+    filterParameters.maxSwellFreq = 3;
+    filterParameters.wsstWaveThreshold = 0.01;
 else
     filterParameters = varargin{1};
 end
@@ -20,12 +22,13 @@ for tCtr = 1:size(velocityWSST,2)
 %We will only apply the filter if the peak frequency corresponds to a
 %period greater than 3s; any higher frequencies almost certainly do not
 %correspond to a swell wave.
-    if waveFreq < 1/3;
+    if waveFreq < 1/filterParameters.maxSwellFreq & max(abs(velocityWSST(:,tCtr))) > filterParameters.wsstWaveThreshold;
         filterMask(wsstFreqVec > (waveFreq - filterParameters.halfWidth) & wsstFreqVec <= waveFreq) = ...
             1 - filterParameters.filterDepth*(wsstFreqVec(wsstFreqVec > (waveFreq - filterParameters.halfWidth) & wsstFreqVec <= waveFreq) - (waveFreq - filterParameters.halfWidth))/filterParameters.halfWidth;
         filterMask(wsstFreqVec > waveFreq & wsstFreqVec < (waveFreq + filterParameters.halfWidth)) = ...
             1 - filterParameters.filterDepth*((waveFreq + filterParameters.halfWidth) - wsstFreqVec(wsstFreqVec > waveFreq & wsstFreqVec < (waveFreq + filterParameters.halfWidth)))/filterParameters.halfWidth;
     end
+    filterMask(filterMask < 0) = 0;
     nonwaveTransformComponent(:,tCtr) = filterMask.*velocityWSST(:,tCtr);
     waveTransformComponent(:,tCtr) = velocityWSST(:,tCtr) - nonwaveTransformComponent(:,tCtr);
 end
