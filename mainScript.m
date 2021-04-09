@@ -146,4 +146,21 @@ bedRelPseudoTKE = wholeRecordSurf2Bed(wavePseudoTKE,burstMaxBins,burstStartIndex
 [wavePseudoTurbFig,wavePseudoTurbCont] = plotTKE(bedRelPseudoTKE(burstStartIndex:burstEndIndex,:),plotParams);
 title(get(wavePseudoTurbFig,'Children'),'Estimate of wave pseudo-k from AWT (log_{10}, J\cdotkg^{-1})')
 
-% [WSSTOnlyRelError,WSSTOnlyAbsError] = TKEArrayErrorCalc();
+%First the error vs. the statistical-only filtered wave condition. As some
+%initial bursts had to be excluded from the EOF analysis, the array of EOF
+%estimates of wave pseudo-TKE (surfRelFilteredTKEWave) has to be padded to
+%match the dimension of the calculated pseudo-TKE.
+[EOFOnlyRelError,EOFOnlyAbsError] = TKEArrayErrorCalc([nan(burstStartIndex - 1,size(surfRelTKEWave,2)); surfRelTKEWave],wavePseudoTKE,[burstStartIndex burstEndIndex]);
+
+%To get the error calculation for the spectral-only filtered estimate of
+%wave pseudo-TKE, we first need to zero to the surface.
+wsstOnlySurfZeroWaveTKE = wholeRecordBed2Surf(specFilteredWaveTKE,burstMaxBins,burstStartIndex,burstEndIndex);
+[WSSTOnlyRelError,WSSTOnlyAbsError] = TKEArrayErrorCalc(wsstOnlySurfZeroWaveTKE,wavePseudoTKE,[burstStartIndex burstEndIndex]);
+
+%The double-filtered wave pseudo-TKE is obtained by taking the WSST
+%filtered wave pseudo-TKE, and then adding the fraction of the remainder
+%attributed to wave action by the subsequent EOF filter. As in the EOF-only
+%case, this requires some initial padding to account for the bursts
+%excluded in the EOF analysis.
+bothFilterSurfZeroWaveTKE = wsstOnlySurfZeroWaveTKE + [nan(burstStartIndex - 1,size(surfRelFilteredTKEWave,2)); surfRelFilteredTKEWave];
+[bothFilterRelError,bothFilterAbsError] = TKEArrayErrorCalc(bothFilterSurfZeroWaveTKE,wavePseudoTKE,[burstStartIndex burstEndIndex]);
