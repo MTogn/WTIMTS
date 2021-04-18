@@ -33,6 +33,15 @@ specFilteredWaveTKE = nan(burstEndIndex,maxBinNo);
 specFilteredNonwaveTKE = nan(burstEndIndex,maxBinNo);
 
 %%
+%If there are any parameters to be set for the filter, they can be
+%set immediately in advance of the main loop; this may be better moved to a
+%general "initialise values" script, but otoh the fewer scripts that have
+%to be modified by a user the better.
+filterParameters.halfWidthPercent = 5
+filterParameters.filterDepth = 1.5;
+filterParameters.maxSwellFreq = 3;
+filterParameters.wsstWaveThreshold = 0;
+
 %Burst loop
 for burstCtr = burstStartIndex:burstEndIndex
     %Import a burst into the workspace
@@ -43,10 +52,10 @@ for burstCtr = burstStartIndex:burstEndIndex
     burstBeamVelocities = truncateBeamVelocityDepthRange(burstBeamVelocities,burstMaxBins(burstCtr));
 
     %Carry out spectral filter
-    [specFilteredWaveVelocities.beam1,specFilteredNonwaveVelocities.beam1] = spectralFilter(burstBeamVelocities.beam1,paramStruc.sampFreq,@ridgeTriangleNotch);
-    [specFilteredWaveVelocities.beam2,specFilteredNonwaveVelocities.beam2] = spectralFilter(burstBeamVelocities.beam2,paramStruc.sampFreq,@ridgeTriangleNotch);
-    [specFilteredWaveVelocities.beam3,specFilteredNonwaveVelocities.beam3] = spectralFilter(burstBeamVelocities.beam3,paramStruc.sampFreq,@ridgeTriangleNotch);
-    [specFilteredWaveVelocities.beam4,specFilteredNonwaveVelocities.beam4] = spectralFilter(burstBeamVelocities.beam4,paramStruc.sampFreq,@ridgeTriangleNotch);
+    [specFilteredWaveVelocities.beam1,specFilteredNonwaveVelocities.beam1] = spectralFilter(burstBeamVelocities.beam1,paramStruc.sampFreq,@ridgeTriangleNotch,filterParameters);
+    [specFilteredWaveVelocities.beam2,specFilteredNonwaveVelocities.beam2] = spectralFilter(burstBeamVelocities.beam2,paramStruc.sampFreq,@ridgeTriangleNotch,filterParameters);
+    [specFilteredWaveVelocities.beam3,specFilteredNonwaveVelocities.beam3] = spectralFilter(burstBeamVelocities.beam3,paramStruc.sampFreq,@ridgeTriangleNotch,filterParameters);
+    [specFilteredWaveVelocities.beam4,specFilteredNonwaveVelocities.beam4] = spectralFilter(burstBeamVelocities.beam4,paramStruc.sampFreq,@ridgeTriangleNotch,filterParameters);
 %     [specFilteredWaveVelocities.beam5,specFilteredNonwaveVelocities.beam5] = spectralFilter(burstBeamVelocities.beam5,paramStruc.sampFreq,@ridgeTriangleNotch);
     
     %Calculate TKE for unfiltered burst velocities
@@ -163,4 +172,4 @@ wsstOnlySurfZeroWaveTKE = wholeRecordBed2Surf(specFilteredWaveTKE,burstMaxBins,b
 %case, this requires some initial padding to account for the bursts
 %excluded in the EOF analysis.
 bothFilterSurfZeroWaveTKE = wsstOnlySurfZeroWaveTKE + [nan(burstStartIndex - 1,size(surfRelFilteredTKEWave,2)); surfRelFilteredTKEWave];
-[bothFilterRelError,bothFilterAbsError] = TKEArrayErrorCalc(bothFilterSurfZeroWaveTKE,wavePseudoTKE,[burstStartIndex burstEndIndex]);
+[bothFilterRelError,bothFilterAbsError] = TKEArrayErrorCalc(bothFilterSurfZeroWaveTKE,wavePseudoTKE,[burstStartIndex burstEndIndex]);   

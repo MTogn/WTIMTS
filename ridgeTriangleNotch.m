@@ -5,11 +5,12 @@ function [waveTransformComponent,nonwaveTransformComponent] = ridgeTriangleNotch
 if nargin < 3,
     %Specify default filter parameters
     filterParameters.halfWidth = 5*(max(wsstFreqVec) - min(wsstFreqVec))/100;
-    filterParameters.filterDepth = 0.9;
+    filterParameters.filterDepth = 1.2;
     filterParameters.maxSwellFreq = 3;
     filterParameters.wsstWaveThreshold = 0.01;
 else
     filterParameters = varargin{1};
+    filterParameters.halfWidth = filterParameters.halfWidthPercent*(max(wsstFreqVec) - min(wsstFreqVec))/100;
 end
 
 nonwaveTransformComponent = velocityWSST;
