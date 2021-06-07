@@ -10,6 +10,10 @@ paramStruc.beamAngle = 25*pi/180; paramStruc.anisoParam = 0.1684;
 paramStruc.blankDist = 1.89; paramStruc.binVertSize = 0.6;
 paramStruc.sampFreq = 2;
 
+%makePlots tells the code whether to plot results as they are calculated or
+%not.
+makePlots = false;
+
 %Preallocate the whole-record variables based on the number of bursts being
 %analysed
 burstStartIndex = 5;
@@ -32,19 +36,23 @@ wholeRecordTKE = nan(burstEndIndex,maxBinNo);
 specFilteredWaveTKE = nan(burstEndIndex,maxBinNo);
 specFilteredNonwaveTKE = nan(burstEndIndex,maxBinNo);
 
-%%
 %If there are any parameters to be set for the filter, they can be
 %set immediately in advance of the main loop; this may be better moved to a
 %general "initialise values" script, but otoh the fewer scripts that have
 %to be modified by a user the better.
-filterParameters.halfWidthPercent = 5
+filterParameters.halfWidthPercent = 7.5;
 filterParameters.filterDepth = 1.5;
-filterParameters.maxSwellFreq = 3;
-filterParameters.wsstWaveThreshold = 0;
+filterParameters.maxSwellFreq = (1/3);
+filterParameters.wsstWaveThreshold = 0.02;
 
+%%
 %Burst loop
 for burstCtr = burstStartIndex:burstEndIndex
-    %Import a burst into the workspace
+    %Load a burst into the workspace; make sure the burst data is in the
+    %correct format. This part of the code is likely to need modification
+    %to suit the format in which your ADCP data is stored. Check the user
+    %guide, section 4.1.2 to see the format the the burst data must be in
+    %before beginning the spectral filter.
     [burstEnsembleNos,burstDatenums,burstBeamVelocities] = importWADZBurst(burstCtr,tiltDataLong);
     wholeRecordEnsNos(burstCtr,:) = [burstEnsembleNos(1) burstEnsembleNos(end)];
     wholeRecordDatenums(burstCtr,:) = [burstDatenums(1) burstDatenums(end)];
@@ -56,7 +64,9 @@ for burstCtr = burstStartIndex:burstEndIndex
     [specFilteredWaveVelocities.beam2,specFilteredNonwaveVelocities.beam2] = spectralFilter(burstBeamVelocities.beam2,paramStruc.sampFreq,@ridgeTriangleNotch,filterParameters);
     [specFilteredWaveVelocities.beam3,specFilteredNonwaveVelocities.beam3] = spectralFilter(burstBeamVelocities.beam3,paramStruc.sampFreq,@ridgeTriangleNotch,filterParameters);
     [specFilteredWaveVelocities.beam4,specFilteredNonwaveVelocities.beam4] = spectralFilter(burstBeamVelocities.beam4,paramStruc.sampFreq,@ridgeTriangleNotch,filterParameters);
-%     [specFilteredWaveVelocities.beam5,specFilteredNonwaveVelocities.beam5] = spectralFilter(burstBeamVelocities.beam5,paramStruc.sampFreq,@ridgeTriangleNotch);
+%     if isfield(burstBeamVelocities,beam5),
+%         [specFilteredWaveVelocities.beam5,specFilteredNonwaveVelocities.beam5] = spectralFilter(burstBeamVelocities.beam5,paramStruc.sampFreq,@ridgeTriangleNotch);
+%     end
     
     %Calculate TKE for unfiltered burst velocities
     wholeRecordTKE(burstCtr,1:burstMaxBins(burstCtr)) = calcBurst4BeamTKE(burstBeamVelocities,paramStruc);
@@ -94,7 +104,10 @@ plotParams.meanSurfRelDepthVec = paramStruc.binVertSize*(0:1:(maxDepthBinWithDat
 
 %Before carrying out the decomposition, we plot the whole-record TKE array
 %including both wave and turbulent contributions
-[wholeRecordTKEFig,wholeRecordTKECont] = plotTKE(wholeRecordTKE(burstStartIndex:burstEndIndex,1:maxDepthBinWithData),plotParams)
+if makePlots == true,
+    [wholeRecordTKEFig,wholeRecordTKECont] = plotTKE(wholeRecordTKE(burstStartIndex:burstEndIndex,1:maxDepthBinWithData),plotParams)
+    title(get(wholeRecordTKEFig,'Children'),'Unfiltered ADCP estimate of TKE')
+end
 
 %Once the TKE array has been zeroed to the surface, we can perform the EOF
 %analysis using the function EOFWrapper. numEOFs restricts the number of
@@ -110,18 +123,21 @@ numEOFs = size(surfRelativeTKE,2);
 %EOF decomposition of the unfiltered ADCP estimate of TKE
 [surfRelTKETurb,surfRelTKEWave] = singleEOFModeTKEDecomposition(surfRelativeTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1),1,plotParams);
 
-title(get(wholeRecordTKEFig,'Children'),'Unfiltered ADCP estimate of TKE')
 %This part of the routine takes the outputs of the EOF decomposition and
 %returns it to a bed-zeroed format. Since some data was lost or excerpted
 %to make the original inputs to the EOF routine, we have to pad the output
 %with nans at the bed AND at the start, if there are any initial bursts
 %that are excluded.
 bedRelTKETurb = wholeRecordSurf2Bed([nan(burstStartIndex - 1,size(surfRelTKETurb,2)); surfRelTKETurb],burstMaxBins,burstStartIndex,burstEndIndex);
-[EOFOnlyTurbFig,EOFOnlyTurbCont] = plotTKE(bedRelTKETurb(burstStartIndex:burstEndIndex,:),plotParams)
-title(get(EOFOnlyTurbFig,'Children'),'EOF-only estimate of turbulent k (log_{10}, J\cdotkg^{-1})')
+if makePlots == true,
+    [EOFOnlyTurbFig,EOFOnlyTurbCont] = plotTKE(bedRelTKETurb(burstStartIndex:burstEndIndex,:),plotParams)
+    title(get(EOFOnlyTurbFig,'Children'),'EOF-only estimate of turbulent k (log_{10}, J\cdotkg^{-1})')
+end
 bedRelTKEWave = wholeRecordSurf2Bed([nan(burstStartIndex - 1,size(surfRelTKEWave,2)); surfRelTKEWave],burstMaxBins,burstStartIndex,burstEndIndex);
-[EOFOnlyWaveFig,EOFOnlyWaveCont] = plotTKE(bedRelTKEWave(burstStartIndex:burstEndIndex,:),plotParams);
-title(get(EOFOnlyWaveFig,'Children'),'EOF-only estimate of wave pseudo-k (log_{10}, J\cdotkg^{-1})')
+if makePlots == true,
+    [EOFOnlyWaveFig,EOFOnlyWaveCont] = plotTKE(bedRelTKEWave(burstStartIndex:burstEndIndex,:),plotParams);
+    title(get(EOFOnlyWaveFig,'Children'),'EOF-only estimate of wave pseudo-k (log_{10}, J\cdotkg^{-1})')
+end
 %%
 %Before proceeding to the EOF filter on the spectral-filtered data, we
 %visualise the TKE fields after going through a spectral filter only.

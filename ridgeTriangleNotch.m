@@ -6,7 +6,7 @@ if nargin < 3,
     %Specify default filter parameters
     filterParameters.halfWidth = 5*(max(wsstFreqVec) - min(wsstFreqVec))/100;
     filterParameters.filterDepth = 1.2;
-    filterParameters.maxSwellFreq = 3;
+    filterParameters.maxSwellFreq = (1/3);
     filterParameters.wsstWaveThreshold = 0.01;
 else
     filterParameters = varargin{1};
@@ -23,7 +23,7 @@ for tCtr = 1:size(velocityWSST,2)
 %We will only apply the filter if the peak frequency corresponds to a
 %period greater than 3s; any higher frequencies almost certainly do not
 %correspond to a swell wave.
-    if waveFreq < 1/filterParameters.maxSwellFreq & max(abs(velocityWSST(:,tCtr))) > filterParameters.wsstWaveThreshold;
+    if waveFreq < filterParameters.maxSwellFreq & max(abs(velocityWSST(:,tCtr))) > filterParameters.wsstWaveThreshold;
         filterMask(wsstFreqVec > (waveFreq - filterParameters.halfWidth) & wsstFreqVec <= waveFreq) = ...
             1 - filterParameters.filterDepth*(wsstFreqVec(wsstFreqVec > (waveFreq - filterParameters.halfWidth) & wsstFreqVec <= waveFreq) - (waveFreq - filterParameters.halfWidth))/filterParameters.halfWidth;
         filterMask(wsstFreqVec > waveFreq & wsstFreqVec < (waveFreq + filterParameters.halfWidth)) = ...
