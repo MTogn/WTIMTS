@@ -13,7 +13,7 @@
 %plotParams - structure containing time and depth vectors to make the
 %plots, if needed.
 
-function [TKETurb,TKEWave,figHand] = singleEOFModeTKEDecomposition(TKE,EOF1,EC1,plotFlag,plotParams)
+function [TKETurb,TKEWave,figHand] = singleEOFModeTKEDecomposition(TKE,EOF1,EC1)
 
 %EOF can capture the time-varying pseudo-TKE introduced by wave action, but
 %it cannot capture any bias introduced to the mean TKE estimate. In order
@@ -30,25 +30,5 @@ function [TKETurb,TKEWave,figHand] = singleEOFModeTKEDecomposition(TKE,EOF1,EC1,
 TKEWave = repmat(meanTKEWave,size(TKE,1),1);
 TKEWave = TKEWave + repmat(EOF1',size(TKE,1),1).*repmat(EC1,1,size(TKE,2));
 TKETurb = TKE - TKEWave;
-
-%Plot the results now
-if nargin > 4,
-    if plotFlag == 1,
-        
-        if nargout > 2,
-            figure(figHand), clf
-        else
-            figure
-        end
-        
-        [depthArr,timeArr] = meshgrid(plotParams.surfRelDepthVec,plotParams.timeVec);
-        subplot(3,1,1), contourf(timeArr',depthArr',log10(TKE'))
-        tempTKE = TKEWave; tempTKE(tempTKE < 0) = 0;
-        subplot(3,1,2), contourf(timeArr',depthArr',log10(tempTKE'))
-        tempTKE = TKETurb; tempTKE(tempTKE < 0) = 0;
-        subplot(3,1,3), contourf(timeArr',depthArr',log10(tempTKE'))
-        
-    end
-end
 
 end

@@ -103,7 +103,7 @@ surfRelativeADCPTKE = wholeRecordBed2Surf(wholeRecordADCPTKE,burstMaxBins,burstS
 numEOFs = size(surfRelativeADCPTKE,2);
 [TKEEigenvals,TKEEigenvalsNormd,TKEEOFs,TKEExpanCoeffs,TKETruncnErr] = EOFWrapper(surfRelativeADCPTKE(burstStartIndex:burstEndIndex,:),numEOFs);
 %EOF decomposition of the unfiltered ADCP estimate of TKE
-[surfRelTKETurb,surfRelTKEWave] = singleEOFModeTKEDecomposition(surfRelativeADCPTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1),1,plotParams);
+[surfRelTKETurb,surfRelTKEWave] = singleEOFModeTKEDecomposition(surfRelativeADCPTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1));
 
 %Now repeat the statistical filter for the TKE dataset that has already
 %undergone spectral filtering to remove (part of) the wave pseudo-TKE.
@@ -111,7 +111,7 @@ surfRelFilterPassedTKE = wholeRecordBed2Surf(specFilterPassedTKE,burstMaxBins,bu
 numEOFs = size(surfRelFilterPassedTKE,2);
 [TKEEigenvals,TKEEigenvalsNormd,TKEEOFs,TKEExpanCoeffs,TKETruncnErr] = EOFWrapper(surfRelFilterPassedTKE(burstStartIndex:burstEndIndex,:),numEOFs);
 %EOF decomposition of the spectrally-filtered ADCP estimate of TKE
-[surfRelFilterPassedTKETurb,surfRelFilterPassedTKEWave] = singleEOFModeTKEDecomposition(surfRelFilterPassedTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1),1,plotParams);
+[surfRelFilterPassedTKETurb,surfRelFilterPassedTKEWave] = singleEOFModeTKEDecomposition(surfRelFilterPassedTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1));
 
 %This part of the routine takes the outputs of the EOF decomposition and
 %returns it to a bed-zeroed format. Since some data was lost or excerpted
