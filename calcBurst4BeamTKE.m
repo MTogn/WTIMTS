@@ -9,10 +9,10 @@
 %TKE assumed to be due to vertical fluctuations (calcParams.anisoParam). A
 %default value is supplied in the function for the anisotropy parameter
 %below but not for the beam angle.
-function burst4BeamTKE = calcBurst4BeamTKE(burstVelocities,calcParams)
+function burst4BeamTKE = calcBurst4BeamTKE(burstVelocities,paramStruc)
 
 if ~exist('calcParams.anisoParam'),
-    calcParams.anisoParam = 0.1684;
+    paramStruc.anisoParam = 0.1684;
 end
 
 %For the beam velocity data, time should be the first dimension and depth
@@ -36,6 +36,6 @@ b3Var = var(burstVelocities.beam3,1,1);
 b4Var = var(burstVelocities.beam4,1,1);
 
 burst4BeamTKE = b1Var + b2Var + b3Var + b4Var;
-burst4BeamTKE = burst4BeamTKE/(4*(sin(calcParams.beamAngle)^2)*(1 + (2*(cot(calcParams.beamAngle)^2) - 1)*calcParams.anisoParam));
+burst4BeamTKE = burst4BeamTKE/(4*(sin(paramStruc.beamAngle)^2)*(1 + (2*(cot(paramStruc.beamAngle)^2) - 1)*paramStruc.anisoParam));
 
 end

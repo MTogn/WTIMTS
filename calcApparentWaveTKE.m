@@ -5,8 +5,6 @@
 %filtered TKE arrays based on ADCP measurements.
 function waveBuoyPseudoTKE = calcApparentWaveTKE(burstIndexRange,paramStruc)
 
-%dataLocation is a string specifying where key data is located
-dataLocation = 'C:\Users\michael\Documents\ADCP\DEMOZONE\';
 %burstIndexRange is a two-element array that specifies the first and last
 %burst number for which we must calculated the expected pseudo-TKE
 burstStartIndex = burstIndexRange(1); burstEndIndex = burstIndexRange(2);
@@ -14,21 +12,21 @@ burstStartIndex = burstIndexRange(1); burstEndIndex = burstIndexRange(2);
 %First determine the frequency in radians per second. Note this is the
 %observed frequency under combined wave-current conditions, not the
 %intrinsic frequency.
-load([dataLocation 'burstWaveModalPeriod.mat']);
+load([paramStruc.dataLocation 'burstWaveModalPeriod.mat']);
 burstObservedWaveFreq = 2*pi./burstWaveModalPeriodDespiked;
 
 %Next determine the wave amplitude - take this as half the significant wave
 %height. burstWaveHeights records the SWH in cm, so an additional factor of
 %100 is needed.
-load([dataLocation 'burstWaveHeights.mat']);
+load([paramStruc.dataLocation 'burstWaveHeights.mat']);
 burstWaveAmp = burstWaveHeightsDespiked'/200;
 
 %Next determine the surface current speed. Take this to be the magnitude of
 %the velocity at the bin closest to the surface for which there is data
 %available (data in the top ~15% of the column cannot be measured due to
 %sidelobe interference).
-load([dataLocation 'burstDepthSurfBins.mat']);
-load([dataLocation 'demozoneMeanVelCorrDirn.mat']);
+load([paramStruc.dataLocation 'burstDepthSurfBins.mat']);
+load([paramStruc.dataLocation 'demozoneMeanVelCorrDirn.mat']);
 %Note that some bursts with bad data have a recorded max bin of 0 - this
 %doesn't play well with subscript assignment, so we relabel these as being
 %at the highest bin possible.
@@ -41,7 +39,7 @@ burstMeanDepth = burstMeanDepth';
 %Determine the directions of the waves and the surface current, and the
 %difference between them. This is an important input for calculating the
 %wave wavenumber and intrinsic frequency.
-load([dataLocation 'burstWaveHeadings.mat']), burstWaveHeadings = burstWaveHeadings';
+load([paramStruc.dataLocation 'burstWaveHeadings.mat']), burstWaveHeadings = burstWaveHeadings';
 surfCurrentDirn = velDirn(surfBinIndices);
 currWaveDirnDiff = wrapToPi((surfCurrentDirn - burstWaveHeadings)*pi/180);
 

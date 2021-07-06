@@ -9,6 +9,7 @@
 paramStruc.beamAngle = 25*pi/180; paramStruc.anisoParam = 0.1684;
 paramStruc.blankDist = 1.89; paramStruc.binVertSize = 0.6;
 paramStruc.sampFreq = 2;
+paramStruc.dataLocation = 'C:\Users\michael\Documents\ADCP\DEMOZONE\';
 
 %makePlots tells the code whether to plot results as they are calculated or
 %not.
@@ -186,8 +187,10 @@ if calcErrorFlag == true,
     
     anycWavePseudoTKE = calcApparentWaveTKE([burstStartIndex burstEndIndex],paramStruc);
     bedRelPseudoTKE = wholeRecordSurf2Bed(anycWavePseudoTKE,burstMaxBins,burstStartIndex,burstEndIndex);
-    [wavePseudoTurbFig,wavePseudoTurbCont] = plotTKE(bedRelPseudoTKE(burstStartIndex:burstEndIndex,:),plotParams);
-    title(get(wavePseudoTurbFig,'Children'),'Estimate of wave pseudo-k from AWT (log_{10}, J\cdotkg^{-1})')
+    if makePlots == true,
+        [wavePseudoTurbFig,wavePseudoTurbCont] = plotTKE(bedRelPseudoTKE(burstStartIndex:burstEndIndex,:),plotParams);
+        title(get(wavePseudoTurbFig,'Children'),'Estimate of wave pseudo-k from AWT (log_{10}, J\cdotkg^{-1})')
+    end
     
 %First the error vs. the statistical-only filtered wave condition. As some
 %initial bursts had to be excluded from the EOF analysis, the array of EOF

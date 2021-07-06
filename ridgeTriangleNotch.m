@@ -1,4 +1,4 @@
-function [waveTransformComponent,nonwaveTransformComponent] = ridgeTriangleNotch(velocityWSST,wsstFreqVec,varargin);
+function [filterStopComponent,filterPassComponent] = ridgeTriangleNotch(velocityWSST,wsstFreqVec,varargin);
 
 %Function may be called without specifying the filter parameters (frequency
 %width, max filter intensity etc.)
@@ -13,23 +13,22 @@ else
     filterParameters.halfWidth = filterParameters.halfWidthPercent*(max(wsstFreqVec) - min(wsstFreqVec))/100;
 end
 
-nonwaveTransformComponent = velocityWSST;
-waveTransformComponent = zeros(size(velocityWSST));
+filterPassComponent = velocityWSST;
+filterStopComponent = zeros(size(velocityWSST));
 %Ridge finding
 freqRidge = wsstridge(velocityWSST,wsstFreqVec);
 for tCtr = 1:size(velocityWSST,2)
     filterMask = ones(length(wsstFreqVec),1);
-    waveFreq = freqRidge(tCtr);
 %We will only apply the filter if the peak frequency corresponds to a
 %period greater than 3s; any higher frequencies almost certainly do not
 %correspond to a swell wave.
-    if waveFreq < filterParameters.maxSwellFreq & max(abs(velocityWSST(:,tCtr))) > filterParameters.wsstWaveThreshold;
-        filterMask(wsstFreqVec > (waveFreq - filterParameters.halfWidth) & wsstFreqVec <= waveFreq) = ...
-            1 - filterParameters.filterDepth*(wsstFreqVec(wsstFreqVec > (waveFreq - filterParameters.halfWidth) & wsstFreqVec <= waveFreq) - (waveFreq - filterParameters.halfWidth))/filterParameters.halfWidth;
-        filterMask(wsstFreqVec > waveFreq & wsstFreqVec < (waveFreq + filterParameters.halfWidth)) = ...
-            1 - filterParameters.filterDepth*((waveFreq + filterParameters.halfWidth) - wsstFreqVec(wsstFreqVec > waveFreq & wsstFreqVec < (waveFreq + filterParameters.halfWidth)))/filterParameters.halfWidth;
+    if freqRidge(tCtr) < filterParameters.maxSwellFreq & max(abs(velocityWSST(:,tCtr))) > filterParameters.wsstWaveThreshold;
+        filterMask(wsstFreqVec > (freqRidge(tCtr) - filterParameters.halfWidth) & wsstFreqVec <= freqRidge(tCtr)) = ...
+            1 - filterParameters.filterDepth*(wsstFreqVec(wsstFreqVec > (freqRidge(tCtr) - filterParameters.halfWidth) & wsstFreqVec <= freqRidge(tCtr)) - (freqRidge(tCtr) - filterParameters.halfWidth))/filterParameters.halfWidth;
+        filterMask(wsstFreqVec > freqRidge(tCtr) & wsstFreqVec < (freqRidge(tCtr) + filterParameters.halfWidth)) = ...
+            1 - filterParameters.filterDepth*((freqRidge(tCtr) + filterParameters.halfWidth) - wsstFreqVec(wsstFreqVec > freqRidge(tCtr) & wsstFreqVec < (freqRidge(tCtr) + filterParameters.halfWidth)))/filterParameters.halfWidth;
     end
     filterMask(filterMask < 0) = 0;
-    nonwaveTransformComponent(:,tCtr) = filterMask.*velocityWSST(:,tCtr);
-    waveTransformComponent(:,tCtr) = velocityWSST(:,tCtr) - nonwaveTransformComponent(:,tCtr);
+    filterPassComponent(:,tCtr) = filterMask.*velocityWSST(:,tCtr);
+    filterStopComponent(:,tCtr) = velocityWSST(:,tCtr) - filterPassComponent(:,tCtr);
 end
