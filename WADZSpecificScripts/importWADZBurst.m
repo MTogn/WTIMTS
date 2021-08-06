@@ -50,7 +50,7 @@ burstVelocityData.beam5 = NaNFilterv2(burstVelocityData.beam5); burstVelocityDat
 %data included in the burst files containing the velocity records; only one
 %of these is needed to find the portion of the whole-deployment tilt data
 %corresponding to each shorter-duration burst, so we discard the time/date
-if ~exist('tiltDataLong')
+if ~exist('tiltDataLong','var')
     tiltDataLong = load('C:\Users\michael\Documents\ADCP\DEMOZONE\completeNWDZTiltData');
     tiltDataLong = tiltDataLong(:,[1 9:10]);
 end

@@ -1,41 +1,39 @@
 %Anything that needs to happen before the main loop over our shorter
 %averaging periods goes here.
 
-%For the original WADZ data set, preprocessing tasks are gathered into the
-%function WADZPreprocessing, which includes:
-% - Loading and formatting tilt and depth data
-[tiltDataLong,demozoneRawDepth] = WADZPreprocessing();
+%If your data requires any preprocessing, alter the script
+%dataPreprocessing to contain all the relevant commands.
+dataPreprocessing
+
 %Initialise some key parameters
-paramStruc.beamAngle = 25*pi/180; paramStruc.anisoParam = 0.1684;
-paramStruc.blankDist = 1.89; paramStruc.binVertSize = 0.6;
+paramStruc.beamAngle = 20*pi/180; paramStruc.anisoParam = 0.1684;
+paramStruc.blankDist = 2.11; paramStruc.binVertSize = 1;
 paramStruc.sampFreq = 2;
-paramStruc.dataLocation = 'C:\Users\michael\Documents\ADCP\DEMOZONE\';
+paramStruc.dataLocation = 'C:\Users\michael\Documents\WTIMTS\PartracBursts\';
 
 %makePlots tells the code whether to plot results as they are calculated or
 %not.
-makePlots = false;
+makePlots = true;
 %calcErrorFlag tells the code whether to calculate the error between
 %analytic wave pseudo-TKE estimates and the estimates from the filters.
-calcErrorFlag = true;
+calcErrorFlag = false;
 
 %Preallocate the whole-record variables based on the number of bursts being
 %analysed
-burstStartIndex = 5;
-burstEndIndex = 1470;
+burstStartIndex = 1;
+burstEndIndex = 820;
 wholeRecordEnsNos = nan(burstEndIndex,2);
 wholeRecordDatenums = nan(burstEndIndex,2);
+burstMeanDepths = nan(burstEndIndex,1);
+burstMaxBins = nan(burstEndIndex,1);
 %It is helpful to know the maximum possible number of bins in advance to
 %aid with preprocessing; if you don't know err on the side of caution
 %(i.e., a larger number of bins) to avoid assigning data to arrays that are
 %too small.
-maxBinNo = 91;
+maxBinNo = 50;
 
-%For the WADZ data set, we use the pre-processed depth data in order to
-%calculate the mean depth for a given burst. This allows us to ensure that
-%the time-consuming WSST filter is not applied to bins in the sidelobe
-%interference range with unreliable data, or even to bins above the
-%surface.
-burstDepths = nan(burstEndIndex,1); burstMaxBins = nan(burstEndIndex,1);
+%Preallocate whole-record variables whose size depends on both the number
+%of bursts and the number of bins.
 wholeRecordADCPTKE = nan(burstEndIndex,maxBinNo);
 specFilterStoppedTKE = nan(burstEndIndex,maxBinNo);
 specFilterPassedTKE = nan(burstEndIndex,maxBinNo);
@@ -52,25 +50,21 @@ filterParameters.wsstWaveThreshold = 0.02;
 %%
 %Burst loop
 for burstCtr = burstStartIndex:burstEndIndex
-    %Load a burst into the workspace; make sure the burst data is in the
-    %correct format. This part of the code is likely to need modification
-    %to suit the format in which your ADCP data is stored. Check the user
+    %Call the script burstLoading to load a burst into the workspace in the
+    %correct format. This script is likely to need modification in order to
+    %suit the format in which your ADCP data is stored. Check the user
     %guide, section 4.1.2 to see the format the the burst data must be in
     %before beginning the spectral filter.
-    [burstEnsembleNos,burstDatenums,burstBeamVelocities] = importWADZBurst(burstCtr,tiltDataLong);
-    wholeRecordEnsNos(burstCtr,:) = [burstEnsembleNos(1) burstEnsembleNos(end)];
-    wholeRecordDatenums(burstCtr,:) = [burstDatenums(1) burstDatenums(end)];
-    [burstDepths(burstCtr),burstMaxBins(burstCtr)] = demozoneDepthPreprocessing(paramStruc,demozoneRawDepth,wholeRecordEnsNos(burstCtr,:),burstCtr);
-    burstBeamVelocities = truncateBeamVelocityDepthRange(burstBeamVelocities,burstMaxBins(burstCtr));
+    burstLoading
 
     %Carry out spectral filter
     [specFilterStoppedVelocities.beam1,specFilterPassedVelocities.beam1] = spectralFilter(burstBeamVelocities.beam1,paramStruc.sampFreq,@ridgeTriangleNotch,filterParameters);
     [specFilterStoppedVelocities.beam2,specFilterPassedVelocities.beam2] = spectralFilter(burstBeamVelocities.beam2,paramStruc.sampFreq,@ridgeTriangleNotch,filterParameters);
     [specFilterStoppedVelocities.beam3,specFilterPassedVelocities.beam3] = spectralFilter(burstBeamVelocities.beam3,paramStruc.sampFreq,@ridgeTriangleNotch,filterParameters);
     [specFilterStoppedVelocities.beam4,specFilterPassedVelocities.beam4] = spectralFilter(burstBeamVelocities.beam4,paramStruc.sampFreq,@ridgeTriangleNotch,filterParameters);
-%     if isfield(burstBeamVelocities,beam5),
-%         [specFilteredWaveVelocities.beam5,specFilteredNonwaveVelocities.beam5] = spectralFilter(burstBeamVelocities.beam5,paramStruc.sampFreq,@ridgeTriangleNotch);
-%     end
+    if isfield(burstBeamVelocities,'beam5'),
+        [specFilteredWaveVelocities.beam5,specFilteredNonwaveVelocities.beam5] = spectralFilter(burstBeamVelocities.beam5,paramStruc.sampFreq,@ridgeTriangleNotch);
+    end
     
     %Calculate TKE for unfiltered burst velocities
     wholeRecordADCPTKE(burstCtr,1:burstMaxBins(burstCtr)) = calcBurst4BeamTKE(burstBeamVelocities,paramStruc);
@@ -138,15 +132,15 @@ bedRelDblFilteredTKEWave = bedRelDblFilteredTKEWave + specFilterStoppedTKE(:,1:m
 minNumBinsWithData = size(surfRelativeADCPTKE,2);
 maxNumBinsWithData = max(burstMaxBins(burstStartIndex:burstEndIndex));
 plotParams.timeVec = wholeRecordDatenums(burstStartIndex:burstEndIndex,1);
-%meanDepth is the mean depth across all bursts; sidelobeDepth is the depth
+%recordMeanDepth is the mean depth across all bursts; sidelobeDepth is the depth
 %range near the surface of the water column from which we cannot obtain
 %useful data due to sidelobe interference.
-meanDepth = nanmean(burstDepths); sidelobeDepth = meanDepth*(1 - cos(paramStruc.beamAngle));
+recordMeanDepth = nanmean(burstMeanDepths); sidelobeDepth = recordMeanDepth*(1 - cos(paramStruc.beamAngle));
 %surfRelDepthVec is the depth vector relative to the surface for any burst
 %individually; meanSurfRelDepthVec is the depth vector relative to the mean
 %surface depth
 plotParams.surfRelDepthVec = -paramStruc.binVertSize*((minNumBinsWithData - 1):-1:0) - sidelobeDepth;
-plotParams.meanSurfRelDepthVec = paramStruc.binVertSize*(0:1:(maxNumBinsWithData - 1)) + (paramStruc.blankDist - meanDepth);
+plotParams.meanSurfRelDepthVec = paramStruc.binVertSize*(0:1:(maxNumBinsWithData - 1)) + (paramStruc.blankDist - recordMeanDepth);
 
 %We can now plot all the TKE arrays in separate figures:
 % - 'Naive' ADCP estimate of TKE
