@@ -1,16 +1,6 @@
 %Anything that needs to happen before the main loop over our shorter
 %averaging periods goes here.
 
-%If your data requires any preprocessing, alter the script
-%dataPreprocessing to contain all the relevant commands.
-dataPreprocessing
-
-%Initialise some key parameters
-paramStruc.beamAngle = 20*pi/180; paramStruc.anisoParam = 0.1684;
-paramStruc.blankDist = 2.11; paramStruc.binVertSize = 1;
-paramStruc.sampFreq = 2;
-paramStruc.dataLocation = 'C:\Users\michael\Documents\WTIMTS\PartracBursts\';
-
 %makePlots tells the code whether to plot results as they are calculated or
 %not.
 makePlots = true;
@@ -21,7 +11,7 @@ calcErrorFlag = false;
 %Preallocate the whole-record variables based on the number of bursts being
 %analysed
 burstStartIndex = 1;
-burstEndIndex = 820;
+burstEndIndex = 1441;
 wholeRecordEnsNos = nan(burstEndIndex,2);
 wholeRecordDatenums = nan(burstEndIndex,2);
 burstMeanDepths = nan(burstEndIndex,1);
@@ -30,7 +20,13 @@ burstMaxBins = nan(burstEndIndex,1);
 %aid with preprocessing; if you don't know err on the side of caution
 %(i.e., a larger number of bins) to avoid assigning data to arrays that are
 %too small.
-maxBinNo = 50;
+maxBinNo = 90;
+
+%If your data requires any preprocessing, alter the script
+%dataPreprocessing to contain all the relevant commands and initialisation
+%of key parameters - in particular, the structure paramStruc should be
+%defined inside dataPreprocessing.
+dataPreprocessing
 
 %Preallocate whole-record variables whose size depends on both the number
 %of bursts and the number of bins.
@@ -42,10 +38,10 @@ specFilterPassedTKE = nan(burstEndIndex,maxBinNo);
 %set immediately in advance of the main loop; this may be better moved to a
 %general "initialise values" script, but otoh the fewer scripts that have
 %to be modified by a user the better.
-filterParameters.halfWidthPercent = 7.5;
-filterParameters.filterDepth = 1.5;
+filterParameters.halfWidthPercent = 2.5;
+filterParameters.filterDepth = 1.2;
 filterParameters.maxSwellFreq = (1/3);
-filterParameters.wsstWaveThreshold = 0.02;
+filterParameters.wsstWaveThreshold = 0;
 
 %%
 %Burst loop

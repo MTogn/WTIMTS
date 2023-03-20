@@ -6,4 +6,4 @@ paramStruc.dataLocation = 'C:\Users\michael\Documents\WTIMTS\virtADCP\synthADCPB
 
 %This loads the burstMeanDepths and burstMaxBins into the workspace from
 %the file in which they're stored
-load([paramStruc.dataLocation 'depthsAndBins.mat']);
+load([paramstruc.dataLocation 'depthsAndBins.mat']);

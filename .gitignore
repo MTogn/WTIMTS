@@ -4,4 +4,10 @@ temp.m
 firstPassSpectra.m
 firstPassWSST.m
 secondPassWSST.m
+importWADZBurst.m
+importPartracBurst.m
+importFoWBurst.m
+
 WADZSpecificScripts
+PartracSpecificScripts
+FoWSpecificScripts
