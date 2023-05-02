@@ -16,8 +16,8 @@ end
 relError = nan(burstEndIndex,1);
 absError = nan(burstEndIndex,1);
 for burstCtr = burstStartIndex:burstEndIndex
-   absError(burstCtr) = mean(abs(TKEArr1(burstCtr,:) - TKEArr2(burstCtr,:)));
-   relError(burstCtr) = 100*absError(burstCtr)/mean(abs(TKEArr1(burstCtr,:)));
+   absError(burstCtr) = mean(abs(TKEArr1(burstCtr,:) - TKEArr2(burstCtr,:)),'omitnan');
+   relError(burstCtr) = 100*absError(burstCtr)/mean(abs(TKEArr1(burstCtr,:)),'omitnan');
 end
 
 end

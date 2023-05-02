@@ -11,7 +11,7 @@ calcErrorFlag = false;
 %Preallocate the whole-record variables based on the number of bursts being
 %analysed
 burstStartIndex = 1;
-burstEndIndex = 1441;
+burstEndIndex = 361;
 wholeRecordEnsNos = nan(burstEndIndex,2);
 wholeRecordDatenums = nan(burstEndIndex,2);
 burstMeanDepths = nan(burstEndIndex,1);
@@ -148,26 +148,26 @@ plotParams.meanSurfRelDepthVec = paramStruc.binVertSize*(0:1:(maxNumBinsWithData
 % - Double-filtered estimate of wave pseudo-TKE
 %including both wave and turbulent contributions
 if makePlots == true,
-    [wholeRecordTKEFig,wholeRecordTKECont] = plotTKE(wholeRecordADCPTKE(burstStartIndex:burstEndIndex,1:maxNumBinsWithData),plotParams)
-    title(get(wholeRecordTKEFig,'Children'),'Unfiltered ADCP estimate of TKE')
+    [wholeRecordTKEFig,wholeRecordTKEAx,wholeRecordTKECont] = plotTKE(wholeRecordADCPTKE(burstStartIndex:burstEndIndex,1:maxNumBinsWithData),plotParams)
+    title(wholeRecordTKEAx,'Unfiltered ADCP estimate of TKE')
     
-    [EOFOnlyTurbFig,EOFOnlyTurbCont] = plotTKE(bedRelTKETurb(burstStartIndex:burstEndIndex,:),plotParams)
-    title(get(EOFOnlyTurbFig,'Children'),'EOF-only estimate of turbulent k (log_{10}, J\cdotkg^{-1})')
+    [EOFOnlyTurbFig,EOFOnlyTurbAx,EOFOnlyTurbCont] = plotTKE(bedRelTKETurb(burstStartIndex:burstEndIndex,:),plotParams)
+    title(EOFOnlyTurbAx,'EOF-only estimate of turbulent k (log_{10}, J\cdotkg^{-1})')
     
-    [EOFOnlyWaveFig,EOFOnlyWaveCont] = plotTKE(bedRelTKEWave(burstStartIndex:burstEndIndex,:),plotParams);
-    title(get(EOFOnlyWaveFig,'Children'),'EOF-only estimate of wave pseudo-k (log_{10}, J\cdotkg^{-1})')
+    [EOFOnlyWaveFig,EOFOnlyWaveAx,EOFOnlyWaveCont] = plotTKE(bedRelTKEWave(burstStartIndex:burstEndIndex,:),plotParams);
+    title(EOFOnlyWaveAx,'EOF-only estimate of wave pseudo-k (log_{10}, J\cdotkg^{-1})')
     
-    [WSSTOnlyTurbFig,WSSTOnlyTurbCont] = plotTKE(specFilterPassedTKE(burstStartIndex:burstEndIndex,1:maxNumBinsWithData),plotParams);
-    title(get(WSSTOnlyTurbFig,'Children'),'WSST-only estimate of turbulent k (log_{10}, J\cdotkg^{-1})')
+    [WSSTOnlyTurbFig,WSSTOnlyTurbAx,WSSTOnlyTurbCont] = plotTKE(specFilterPassedTKE(burstStartIndex:burstEndIndex,1:maxNumBinsWithData),plotParams);
+    title(WSSTOnlyTurbAx,'WSST-only estimate of turbulent k (log_{10}, J\cdotkg^{-1})')
     
-    [WSSTOnlyWaveFig,WSSTOnlyWaveCont] = plotTKE(specFilterStoppedTKE(burstStartIndex:burstEndIndex,1:maxNumBinsWithData),plotParams);
-    title(get(WSSTOnlyWaveFig,'Children'),'WSST-only estimate of wave pseudo-k (log_{10}, J\cdotkg^{-1})')
+    [WSSTOnlyWaveFig,WSSTOnlyWaveAx,WSSTOnlyWaveCont] = plotTKE(specFilterStoppedTKE(burstStartIndex:burstEndIndex,1:maxNumBinsWithData),plotParams);
+    title(WSSTOnlyWaveAx,'WSST-only estimate of wave pseudo-k (log_{10}, J\cdotkg^{-1})')
 
-    [bothFilterTurbFig,bothFilterTurbCont] = plotTKE(bedRelDblFilteredTKETurb(burstStartIndex:burstEndIndex,:),plotParams);
-    title(get(bothFilterTurbFig,'Children'),'Estimate of turbulent k with both filters (log_{10}, J\cdotkg^{-1})')
+    [bothFilterTurbFig,bothFilterTurbAx,bothFilterTurbCont] = plotTKE(bedRelDblFilteredTKETurb(burstStartIndex:burstEndIndex,:),plotParams);
+    title(bothFilterTurbAx,'Estimate of turbulent k with both filters (log_{10}, J\cdotkg^{-1})')
     
-    [bothFilterWaveFig,bothFilterWaveCont] = plotTKE(bedRelDblFilteredTKEWave(burstStartIndex:burstEndIndex,:),plotParams);
-    title(get(bothFilterWaveFig,'Children'),'Estimate of wave pseudo-k with both filters (log_{10}, J\cdotkg^{-1})')
+    [bothFilterWaveFig,bothFilterWaveAx,bothFilterWaveCont] = plotTKE(bedRelDblFilteredTKEWave(burstStartIndex:burstEndIndex,:),plotParams);
+    title(bothFilterWaveAx,'Estimate of wave pseudo-k with both filters (log_{10}, J\cdotkg^{-1})')
 end
 
 %%

@@ -4,6 +4,6 @@ paramStruc.blankDist = 1.6; paramStruc.binVertSize = 1;
 paramStruc.sampFreq = 2;
 paramStruc.dataLocation = 'C:\Users\michael\Documents\WTIMTS\virtADCP\synthADCPBursts\';
 
-%This loads the burstMeanDepths and burstMaxBins into the workspace from
-%the file in which they're stored
-load([paramStruc.dataLocation 'depthsAndBins.mat']);
+%This loads the burstMeanDepths, burstMaxBins and wholeRecordDatenums
+%into the workspace from the file in which they're stored
+load([paramStruc.dataLocation 'synthRecordData.mat']);
