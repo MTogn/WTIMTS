@@ -17,7 +17,7 @@ function [V,EOFs,EC,error]=EOF(D,p)
 
 % first compute zero-averaged data sets
 [n]=size(D,1);
-DS = D - repmat(nanmean(D,1),n,1);
+DS = D - repmat(mean(D,1,'omitnan'),n,1);
 
 % Determine size of the data matrix (m=number of time steps, n= number of spatial locations)
 

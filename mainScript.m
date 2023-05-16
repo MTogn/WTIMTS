@@ -25,8 +25,15 @@ maxBinNo = 90;
 %If your data requires any preprocessing, alter the script
 %dataPreprocessing to contain all the relevant commands and initialisation
 %of key parameters - in particular, the structure paramStruc should be
-%defined inside dataPreprocessing.
+%defined inside dataPreprocessing. paramStruc should define the directory
+%from which data is drawn as paramStruc.dataLocation
 dataPreprocessing
+
+%If data is to be saved automatically, switch the flag to true and indicate
+%the save location
+saveDataFlag = true;
+paramStruc.saveDirectory = 'C:\Users\michael\Documents\WTIMTS\virtADCP\Results\';
+paramStruc.saveFilename = 'synthADCPBursts_15May23_irreg.mat';
 
 %Preallocate whole-record variables whose size depends on both the number
 %of bursts and the number of bins.
@@ -84,7 +91,7 @@ end
 %re-zero the dataset to reflect this, such that each point corresponds to
 %the same number of bins below the surface rather than the same number of
 %bins above the bed.
-surfRelativeADCPTKE = wholeRecordBed2Surf(wholeRecordADCPTKE,burstMaxBins,burstStartIndex,burstEndIndex);
+surfRelADCPTKE = wholeRecordBed2Surf(wholeRecordADCPTKE,burstMaxBins,burstStartIndex,burstEndIndex);
 
 %Once the TKE array has been zeroed to the surface, we can perform the EOF
 %analysis using the function EOFWrapper. numEOFs restricts the number of
@@ -94,10 +101,10 @@ surfRelativeADCPTKE = wholeRecordBed2Surf(wholeRecordADCPTKE,burstMaxBins,burstS
 %decomposition, plus some data hygiene and normalisation. Small EOF numbers
 %can lead to the first EOFs/ECs being the opposite sign to what is expected
 %- reason for this is unclear. Stick to larger numbers for now.
-numEOFs = size(surfRelativeADCPTKE,2);
-[TKEEigenvals,TKEEigenvalsNormd,TKEEOFs,TKEExpanCoeffs,TKETruncnErr] = EOFWrapper(surfRelativeADCPTKE(burstStartIndex:burstEndIndex,:),numEOFs);
+numEOFs = size(surfRelADCPTKE,2);
+[TKEEigenvals,TKEEigenvalsNormd,TKEEOFs,TKEExpanCoeffs,TKETruncnErr] = EOFWrapper(surfRelADCPTKE(burstStartIndex:burstEndIndex,:),numEOFs);
 %EOF decomposition of the unfiltered ADCP estimate of TKE
-[surfRelTKETurb,surfRelTKEWave] = singleEOFModeTKEDecomposition(surfRelativeADCPTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1));
+[surfRelTKETurb,surfRelTKEWave] = singleEOFModeTKEDecomposition(surfRelADCPTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1));
 
 %Now repeat the statistical filter for the TKE dataset that has already
 %undergone spectral filtering to remove (part of) the wave pseudo-TKE.
@@ -125,13 +132,13 @@ bedRelDblFilteredTKEWave = bedRelDblFilteredTKEWave + specFilterStoppedTKE(:,1:m
 %%
 %Some preprocessing of date/depth arrays so we have a unified way of
 %plotting data that depends on time and/or depth.
-minNumBinsWithData = size(surfRelativeADCPTKE,2);
+minNumBinsWithData = size(surfRelADCPTKE,2);
 maxNumBinsWithData = max(burstMaxBins(burstStartIndex:burstEndIndex));
 plotParams.timeVec = wholeRecordDatenums(burstStartIndex:burstEndIndex,1);
 %recordMeanDepth is the mean depth across all bursts; sidelobeDepth is the depth
 %range near the surface of the water column from which we cannot obtain
 %useful data due to sidelobe interference.
-recordMeanDepth = nanmean(burstMeanDepths); sidelobeDepth = recordMeanDepth*(1 - cos(paramStruc.beamAngle));
+recordMeanDepth = mean(burstMeanDepths,'omitnan'); sidelobeDepth = recordMeanDepth*(1 - cos(paramStruc.beamAngle));
 %surfRelDepthVec is the depth vector relative to the surface for any burst
 %individually; meanSurfRelDepthVec is the depth vector relative to the mean
 %surface depth
@@ -170,6 +177,11 @@ if makePlots == true,
     title(bothFilterWaveAx,'Estimate of wave pseudo-k with both filters (log_{10}, J\cdotkg^{-1})')
 end
 
+%%
+if saveDataFlag == true
+    saveVarsList = mkSaveVarsList;
+    save([paramStruc.saveDirectory paramStruc.saveFilename],saveVarsList{:});
+end
 %%
 %This section of the code calculates or imports the expected wave
 %pseudo-TKE if it exists, and calculates the error vs. the filtered TKE.
