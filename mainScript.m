@@ -33,7 +33,7 @@ dataPreprocessing
 %the save location
 saveDataFlag = true;
 paramStruc.saveDirectory = 'C:\Users\michael\Documents\WTIMTS\virtADCP\Results\';
-paramStruc.saveFilename = 'synthADCPBursts_15May23_irreg.mat';
+% paramStruc.saveFilename = 'completeWorkspace.mat';
 
 %Preallocate whole-record variables whose size depends on both the number
 %of bursts and the number of bins.
@@ -45,10 +45,10 @@ specFilterPassedTKE = nan(burstEndIndex,maxBinNo);
 %set immediately in advance of the main loop; this may be better moved to a
 %general "initialise values" script, but otoh the fewer scripts that have
 %to be modified by a user the better.
-filterParameters.halfWidthPercent = 2.5;
-filterParameters.filterDepth = 1.2;
+filterParameters.halfWidthPercent = 7.5;
+filterParameters.filterDepth = 1.5;
 filterParameters.maxSwellFreq = (1/3);
-filterParameters.wsstWaveThreshold = 0;
+filterParameters.wsstWaveThreshold = 0.02;
 
 %%
 %Burst loop
