@@ -22,7 +22,7 @@ switch nargout
 end
 colorbar
 
-datetick('x','mmm-dd','keepticks')
+datetick('x','mmm-dd','keepticks','keeplimits')
 set(get(gca,'YLabel'),'String','Depth below mean surface level (m)')
 
 end

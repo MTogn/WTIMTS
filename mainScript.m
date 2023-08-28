@@ -45,8 +45,8 @@ specFilterPassedTKE = nan(burstEndIndex,maxBinNo);
 %set immediately in advance of the main loop; this may be better moved to a
 %general "initialise values" script, but otoh the fewer scripts that have
 %to be modified by a user the better.
-filterParameters.halfWidthPercent = 7.5;
-filterParameters.filterDepth = 1.5;
+filterParameters.halfWidthPercent = 5;
+filterParameters.filterDepth = 0.9;
 filterParameters.maxSwellFreq = (1/3);
 filterParameters.wsstWaveThreshold = 0.02;
 
