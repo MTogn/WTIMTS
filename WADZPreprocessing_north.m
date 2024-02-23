@@ -7,15 +7,15 @@
 %containing the velocity records; only one of these is needed to find the
 %portion of the whole-deployment tilt data corresponding to each shorter-
 %duration burst, so we discard the time/date.
-function [tiltDataLong,demozoneRawDepth] = WADZPreprocessing();
+function [tiltDataLong,demozoneRawDepth] = WADZPreprocessing_north();
 
     if ~exist('tiltDataLong')
-        tiltDataLong = load('C:\Users\michael\Documents\ADCP\NWDZ_north\completeNWDZTiltData_North');
+        tiltDataLong = load('C:\Users\michael\Documents\ADCP\NWDZ_north\completeNWDZTiltData_North.mat');
         tiltDataLong = tiltDataLong(:,[1 9:10]);
     end
     
     if ~exist('demozoneRawDepth')
-        demozoneRawDepth = load('C:\Users\michael\Documents\ADCP\DEMOZONE\demozoneRawDepth');
+        demozoneRawDepth = load('C:\Users\michael\Documents\ADCP\NWDZ_north\demozoneRawDepth_North.mat');
         demozoneRawDepth = demozoneRawDepth(:,[1 9]);
     end
 

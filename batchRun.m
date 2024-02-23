@@ -1,3 +1,6 @@
+%Several calls to mainScript when there are many similar sets of bursts to
+%analyse
+
 paramStruc.saveFilename = 'output23Aug23a_reg.mat';
 paramStruc.dataLocation = 'C:\Users\michael\Documents\WTIMTS\virtADCP\synthADCPBursts23Aug23a_reg\';
 mainScript

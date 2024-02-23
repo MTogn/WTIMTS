@@ -3,7 +3,7 @@
 
 %makePlots tells the code whether to plot results as they are calculated or
 %not.
-makePlots = true;
+makePlots = false;
 %calcErrorFlag tells the code whether to calculate the error between
 %analytic wave pseudo-TKE estimates and the estimates from the filters.
 calcErrorFlag = false;
@@ -11,7 +11,7 @@ calcErrorFlag = false;
 %Preallocate the whole-record variables based on the number of bursts being
 %analysed
 burstStartIndex = 1;
-burstEndIndex = 361;
+burstEndIndex = 9239;
 wholeRecordEnsNos = nan(burstEndIndex,2);
 wholeRecordDatenums = nan(burstEndIndex,2);
 burstMeanDepths = nan(burstEndIndex,1);
@@ -32,7 +32,7 @@ dataPreprocessing
 %If data is to be saved automatically, switch the flag to true and indicate
 %the save location
 saveDataFlag = true;
-paramStruc.saveDirectory = 'C:\Users\michael\Documents\WTIMTS\virtADCP\Results\';
+paramStruc.saveDirectory = 'C:\Users\michael\Documents\ADCP\NWDZ_north\Results\';
 % paramStruc.saveFilename = 'completeWorkspace.mat';
 
 %Preallocate whole-record variables whose size depends on both the number
@@ -45,8 +45,8 @@ specFilterPassedTKE = nan(burstEndIndex,maxBinNo);
 %set immediately in advance of the main loop; this may be better moved to a
 %general "initialise values" script, but otoh the fewer scripts that have
 %to be modified by a user the better.
-filterParameters.halfWidthPercent = 5;
-filterParameters.filterDepth = 0.9;
+filterParameters.halfWidthPercent = 7.5;
+filterParameters.filterDepth = 1.5;
 filterParameters.maxSwellFreq = (1/3);
 filterParameters.wsstWaveThreshold = 0.02;
 
