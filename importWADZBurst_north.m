@@ -3,7 +3,7 @@
 %filtering for bad data, spikes and excess tilt should be done within the
 %function call, so that the output is a best approximation of the actual
 %along-beam velocity time series.
-function [burstEnsembleNos,burstDatenums,burstVelocityData] = importWADZBurst_north(burstCtr,tiltDataLong)
+function [burstEnsembleNos,burstDatenums,burstVelocityData,burstHeadingRaw] = importWADZBurst_north(burstCtr,tiltDataLong)
 
 WADZDataAbsoluteLocation = 'C:\Users\michael\Documents\ADCP\NWDZ_north\burstData\';
 burstData = load([WADZDataAbsoluteLocation 'burstData' int2str(burstCtr)]);
@@ -33,6 +33,7 @@ burstVelocityData.beam1 = burstData(:,9:92);
 burstVelocityData.beam2 = burstData(:,93:176);
 burstVelocityData.beam3 = burstData(:,177:260);
 burstVelocityData.beam4 = burstData(:,261:344);
+burstHeadingRaw = burstData(:,345);
 
 %We filter the raw data for NaNs (or values of -32678, equal to -8000 in
 %hex, which is the 'bad data' value in the RDI Workhorse firmware), and we
@@ -68,9 +69,9 @@ burstVelocityData.beam3 = excessTiltFilter(burstVelocityData.beam3,...
 burstVelocityData.beam4 = excessTiltFilter(burstVelocityData.beam4,...
                                             tiltDataLong(burstEnsembleNos(1):burstEnsembleNos(end),2),...
                                             tiltDataLong(burstEnsembleNos(1):burstEnsembleNos(end),3));
-burstVelocityData.beam5 = excessTiltFilter(burstVelocityData.beam5,...
-                                            tiltDataLong(burstEnsembleNos(1):burstEnsembleNos(end),2),...
-                                            tiltDataLong(burstEnsembleNos(1):burstEnsembleNos(end),3));
+burstHeadingRaw = excessTiltFilter(burstHeadingRaw,...
+                                    tiltDataLong(burstEnsembleNos(1):burstEnsembleNos(end),2),...
+                                    tiltDataLong(burstEnsembleNos(1):burstEnsembleNos(end),3));
 
 %Function end
 end

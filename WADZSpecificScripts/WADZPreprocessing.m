@@ -10,7 +10,7 @@
 function [tiltDataLong,demozoneRawDepth] = WADZPreprocessing();
 
     if ~exist('tiltDataLong')
-        tiltDataLong = load('C:\Users\michael\Documents\ADCP\NWDZ_north\completeNWDZTiltData_North');
+        tiltDataLong = load('C:\Users\michael\Documents\ADCP\DEMOZONE\completeNWDZTiltData');
         tiltDataLong = tiltDataLong(:,[1 9:10]);
     end
     

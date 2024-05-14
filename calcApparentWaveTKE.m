@@ -26,7 +26,12 @@ burstWaveAmp = burstWaveHeightsDespiked'/200;
 %available (data in the top ~15% of the column cannot be measured due to
 %sidelobe interference).
 load([paramStruc.dataLocation 'burstDepthSurfBins.mat']);
-load([paramStruc.dataLocation 'demozoneMeanVelCorrDirn.mat']);
+%burstMeanVelsDirs must include at least:
+%   - a 2D array velDirn of size (maxBinNos,numBursts) containing the mean
+%flow direction for each height in the water column for each burst
+%   - a 2D array velMag of the same size containing the mean flow magnitude
+%for the same locations
+load([paramStruc.dataLocation 'burstMeanVelsDirs.mat']);
 %Note that some bursts with bad data have a recorded max bin of 0 - this
 %doesn't play well with subscript assignment, so we relabel these as being
 %at the highest bin possible.

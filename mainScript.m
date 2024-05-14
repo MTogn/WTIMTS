@@ -3,15 +3,18 @@
 
 %makePlots tells the code whether to plot results as they are calculated or
 %not.
-makePlots = false;
+makePlots = true;
+%Not all cases need mean flow data, or may have mean flow data already
+%calculated; this section is therefore controlled with a flag.
+calcMeanFlowFlag = false;
 %calcErrorFlag tells the code whether to calculate the error between
 %analytic wave pseudo-TKE estimates and the estimates from the filters.
 calcErrorFlag = false;
 
 %Preallocate the whole-record variables based on the number of bursts being
 %analysed
-burstStartIndex = 1;
-burstEndIndex = 9239;
+burstStartIndex = 50;
+burstEndIndex = 8958;
 wholeRecordEnsNos = nan(burstEndIndex,2);
 wholeRecordDatenums = nan(burstEndIndex,2);
 burstMeanDepths = nan(burstEndIndex,1);
@@ -33,7 +36,7 @@ dataPreprocessing
 %the save location
 saveDataFlag = true;
 paramStruc.saveDirectory = 'C:\Users\michael\Documents\ADCP\NWDZ_north\Results\';
-% paramStruc.saveFilename = 'completeWorkspace.mat';
+paramStruc.saveFilename = 'completeWorkspace0p9Deep15Wide.mat';
 
 %Preallocate whole-record variables whose size depends on both the number
 %of bursts and the number of bins.
@@ -46,10 +49,35 @@ specFilterPassedTKE = nan(burstEndIndex,maxBinNo);
 %general "initialise values" script, but otoh the fewer scripts that have
 %to be modified by a user the better.
 filterParameters.halfWidthPercent = 7.5;
-filterParameters.filterDepth = 1.5;
+filterParameters.filterDepth = 0.9;
 filterParameters.maxSwellFreq = (1/3);
 filterParameters.wsstWaveThreshold = 0.02;
 
+%%
+    switch calcMeanFlowFlag
+        case 1
+            %velLat and velLong are the lateral and longitudinal velocities
+            %relative to the ADCP i.e., the device-relative y- and
+            %x-velocities.
+            velLat = nan(maxBinNo,burstEndIndex);
+            velLong = nan(maxBinNo,burstEndIndex);
+            velMag = nan(maxBinNo,burstEndIndex);
+            velDirn = nan(maxBinNo,burstEndIndex);
+            for burstCtr = burstStartIndex:burstEndIndex
+                burstLoading
+
+                burstMeanFlow = calcMeanFlowProperties(burstBeamVelocities,burstHeadingRaw,paramStruc);
+                velLong(1:burstMaxBins(burstCtr),burstCtr) = burstMeanFlow.uMean(1:burstMaxBins(burstCtr));
+                velLat(1:burstMaxBins(burstCtr),burstCtr) = burstMeanFlow.vMean(1:burstMaxBins(burstCtr));
+                velMag(1:burstMaxBins(burstCtr),burstCtr) = sqrt(velLong(1:burstMaxBins(burstCtr),burstCtr).^2 + velLat(1:burstMaxBins(burstCtr),burstCtr).^2);
+                velDirn(1:burstMaxBins(burstCtr),burstCtr) = burstMeanFlow.flowHeadingMean;
+
+                if rem(burstCtr,10) == 0,
+                    fprintf("Burst # is %d \r",burstCtr)
+                end
+
+            end
+    end
 %%
 %Burst loop
 for burstCtr = burstStartIndex:burstEndIndex
@@ -134,11 +162,14 @@ bedRelDblFilteredTKEWave = bedRelDblFilteredTKEWave + specFilterStoppedTKE(:,1:m
 %plotting data that depends on time and/or depth.
 minNumBinsWithData = size(surfRelADCPTKE,2);
 maxNumBinsWithData = max(burstMaxBins(burstStartIndex:burstEndIndex));
+%The datenum record must be a column vector
+if size(wholeRecordDatenums,1) == 1, wholeRecordDatenums = wholeRecordDatenums'; end
 plotParams.timeVec = wholeRecordDatenums(burstStartIndex:burstEndIndex,1);
 %recordMeanDepth is the mean depth across all bursts; sidelobeDepth is the depth
 %range near the surface of the water column from which we cannot obtain
 %useful data due to sidelobe interference.
 recordMeanDepth = mean(burstMeanDepths,'omitnan'); sidelobeDepth = recordMeanDepth*(1 - cos(paramStruc.beamAngle));
+burstSurfBins = 1 + floor((burstMeanDepths - paramStruc.blankDist)/paramStruc.binVertSize);
 %surfRelDepthVec is the depth vector relative to the surface for any burst
 %individually; meanSurfRelDepthVec is the depth vector relative to the mean
 %surface depth
@@ -155,10 +186,10 @@ plotParams.meanSurfRelDepthVec = paramStruc.binVertSize*(0:1:(maxNumBinsWithData
 % - Double-filtered estimate of wave pseudo-TKE
 %including both wave and turbulent contributions
 if makePlots == true,
-    [wholeRecordTKEFig,wholeRecordTKEAx,wholeRecordTKECont] = plotTKE(wholeRecordADCPTKE(burstStartIndex:burstEndIndex,1:maxNumBinsWithData),plotParams)
+    [wholeRecordTKEFig,wholeRecordTKEAx,wholeRecordTKECont] = plotTKE(wholeRecordADCPTKE(burstStartIndex:burstEndIndex,1:maxNumBinsWithData),plotParams);
     title(wholeRecordTKEAx,'Unfiltered ADCP estimate of TKE')
     
-    [EOFOnlyTurbFig,EOFOnlyTurbAx,EOFOnlyTurbCont] = plotTKE(bedRelTKETurb(burstStartIndex:burstEndIndex,:),plotParams)
+    [EOFOnlyTurbFig,EOFOnlyTurbAx,EOFOnlyTurbCont] = plotTKE(bedRelTKETurb(burstStartIndex:burstEndIndex,:),plotParams);
     title(EOFOnlyTurbAx,'EOF-only estimate of turbulent k (log_{10}, J\cdotkg^{-1})')
     
     [EOFOnlyWaveFig,EOFOnlyWaveAx,EOFOnlyWaveCont] = plotTKE(bedRelTKEWave(burstStartIndex:burstEndIndex,:),plotParams);

@@ -10,11 +10,11 @@ tempTKE = TKEArray; tempTKE(tempTKE < 0) = 0;
 
 switch nargout
     case 0
-        figure
-        contourf(timeArr',depthArr',log10(tempTKE'),'LineStyle','none')
+        figure;
+        contourf(timeArr',depthArr',log10(tempTKE'),'LineStyle','none');
     case 1
         figHand = figure;
-        contourf(timeArr',depthArr',log10(tempTKE'),'LineStyle','none')
+        contourf(timeArr',depthArr',log10(tempTKE'),'LineStyle','none');
     otherwise
         figHand = figure;
         [dummy,contourHand] = contourf(timeArr',depthArr',log10(tempTKE'),'LineStyle','none');
