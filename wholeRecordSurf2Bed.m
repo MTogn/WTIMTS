@@ -5,10 +5,10 @@
 %represented as nans.
 function bedRelativeVariable = wholeRecordSurf2Bed(surfRelativeVariable,binsByBurst,recordStartBurst,recordEndBurst)
 
-bedRelativeVariable = nan(size(surfRelativeVariable,1),max(binsByBurst(recordStartBurst:recordEndBurst)));
+bedRelativeVariable = nan(max(binsByBurst(recordStartBurst:recordEndBurst)),recordEndBurst);
 for recordCtr = recordStartBurst:recordEndBurst
     binsMoreThanMin = binsByBurst(recordCtr) - min(binsByBurst);
-    bedRelativeVariable(recordCtr,(1 + binsMoreThanMin):binsByBurst(recordCtr)) = surfRelativeVariable(recordCtr,:);
+    bedRelativeVariable((1 + binsMoreThanMin):binsByBurst(recordCtr),recordCtr) = surfRelativeVariable(:,recordCtr);
 end
 
 end

@@ -14,17 +14,21 @@ burstStartIndex = burstIndexRange(1); burstEndIndex = burstIndexRange(2);
 %intrinsic frequency.
 load([paramStruc.dataLocation 'burstWaveModalPeriod.mat']);
 burstObservedWaveFreq = 2*pi./burstWaveModalPeriodDespiked;
+%Several variables relating to current and wave properties in this code are
+%found to not be reliably in the correct row order. The first rank should
+%be along the water column, and the second rank along the bursts. Thus,
+%variables such as burstObservedWaveFreq (with one value per burst) should
+%be row vectors. This is repeated for similar variables throughout.
+if ~isrow(burstObservedWaveFreq), burstObservedWaveFreq = burstObservedWaveFreq'; end
 
-%Next determine the wave amplitude - take this as half the significant wave
-%height. burstWaveHeights records the SWH in cm, so an additional factor of
-%100 is needed.
+%Wave amplitude is half of significant wave height. Waverider buoys record
+%SWH in cm, so an additional factor of 100 is needed.
 load([paramStruc.dataLocation 'burstWaveHeights.mat']);
-burstWaveAmp = burstWaveHeightsDespiked'/200;
+burstWaveAmp = burstWaveHeightsDespiked/200;
+if ~isrow(burstWaveAmp), burstWaveAmp = burstWaveAmp'; end
 
-%Next determine the surface current speed. Take this to be the magnitude of
-%the velocity at the bin closest to the surface for which there is data
-%available (data in the top ~15% of the column cannot be measured due to
-%sidelobe interference).
+%Surface current speed is approximated as the magnitude of velocity at the
+%bin closest to the surface for which there is data available
 load([paramStruc.dataLocation 'burstDepthSurfBins.mat']);
 %burstMeanVelsDirs must include at least:
 %   - a 2D array velDirn of size (maxBinNos,numBursts) containing the mean
@@ -32,20 +36,28 @@ load([paramStruc.dataLocation 'burstDepthSurfBins.mat']);
 %   - a 2D array velMag of the same size containing the mean flow magnitude
 %for the same locations
 load([paramStruc.dataLocation 'burstMeanVelsDirs.mat']);
-%Note that some bursts with bad data have a recorded max bin of 0 - this
-%doesn't play well with subscript assignment, so we relabel these as being
-%at the highest bin possible.
+%Note that some bursts with bad data may have a recorded max bin of 0 - 
+%relabel these as being at the highest bin possible.
 burstMaxBins_noZeros = burstMaxBins;
 burstMaxBins_noZeros(burstMaxBins_noZeros == 0) = size(velMag,1);
+if ~isrow(burstMaxBins_noZeros), burstMaxBins_noZeros = burstMaxBins_noZeros'; end
 surfBinIndices = sub2ind(size(velDirn),burstMaxBins_noZeros,1:burstEndIndex);
-surfCurrentSpeed = velMag(surfBinIndices)';
-burstMeanDepths = burstMeanDepths';
+
+%Some bursts may have current or wave data as nans due to bad data; this
+%ensures that we get only the data corresponding to bursts with all surface
+%and wave data.
+surfCurrentSpeed = nan(size(surfBinIndices));
+surfCurrentSpeed(~isnan(surfBinIndices)) = velMag(surfBinIndices(~isnan(surfBinIndices)));
+
+if ~isrow(surfCurrentSpeed), surfCurrentSpeed = surfCurrentSpeed'; end
+if ~isrow(burstMeanDepths), burstMeanDepths = burstMeanDepths'; end
 
 %Determine the directions of the waves and the surface current, and the
 %difference between them. This is an important input for calculating the
 %wave wavenumber and intrinsic frequency.
 load([paramStruc.dataLocation 'burstWaveHeadings.mat']), burstWaveHeadings = burstWaveHeadings';
-surfCurrentDirn = velDirn(surfBinIndices);
+surfCurrentDirn = nan(size(surfBinIndices));
+surfCurrentDirn(~isnan(surfBinIndices)) = velDirn(surfBinIndices(~isnan(surfBinIndices)));
 currWaveDirnDiff = wrapToPi((surfCurrentDirn - burstWaveHeadings)*pi/180);
 
 %The loop below is the main calculation; for each burst, we calculate the
@@ -53,14 +65,14 @@ currWaveDirnDiff = wrapToPi((surfCurrentDirn - burstWaveHeadings)*pi/180);
 %current speed and direction. From this we get the intrinsic frequency, the
 %amplitude of the wave pseudo-TKE and, finally, the profile of wave
 %pseudo-TKE itself.
-burstWvno = nan(burstEndIndex,1);
-burstIntrinsWaveFreq = nan(burstEndIndex,1);
-kWaveAmplitude = nan(burstEndIndex,1);
+burstWvno = nan(1,burstEndIndex);
+burstIntrinsWaveFreq = nan(1,burstEndIndex);
+kWaveAmplitude = nan(1,burstEndIndex);
 %For the array of wave pseudo-TKE profiles, we need to know the number of
 %bins in the profile; this is also used inside the loop to calculate the
 %burst-wise depths.
 minBinWithData = min(burstMaxBins_noZeros);
-waveBuoyPseudoTKE = nan(burstEndIndex,minBinWithData);
+waveBuoyPseudoTKE = nan(minBinWithData,burstEndIndex);
 for burstCtr = burstStartIndex:burstEndIndex
     burstWvno(burstCtr) = iterCalcWvno_WavesCurrents(burstObservedWaveFreq(burstCtr),...
                                         burstMeanDepths(burstCtr),...
@@ -74,7 +86,7 @@ for burstCtr = burstStartIndex:burstEndIndex
 %simplified when plotting the whole-record data.
     sidelobeDepth = burstMeanDepths(burstCtr)*(1 - cos(paramStruc.beamAngle));
     depthFromSurf = -paramStruc.binVertSize*((minBinWithData - 1):-1:0) - sidelobeDepth;
-    waveBuoyPseudoTKE(burstCtr,:) = kWaveAmplitude(burstCtr)*cosh(2*burstWvno(burstCtr)*(depthFromSurf + burstMeanDepths(burstCtr))); 
+    waveBuoyPseudoTKE(:,burstCtr) = kWaveAmplitude(burstCtr)*cosh(2*burstWvno(burstCtr)*(depthFromSurf + burstMeanDepths(burstCtr))); 
 end
 
 end

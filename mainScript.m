@@ -227,8 +227,8 @@ switch calcErrorFlag
         anycWavePseudoTKE = calcApparentWaveTKE([burstStartIndex burstEndIndex],paramStruc);
         bedRelPseudoTKE = wholeRecordSurf2Bed(anycWavePseudoTKE,burstMaxBins,burstStartIndex,burstEndIndex);
         if makePlots == true,
-            [wavePseudoTurbFig,wavePseudoTurbCont] = plotTKE(bedRelPseudoTKE(burstStartIndex:burstEndIndex,:),plotParams);
-            title(get(wavePseudoTurbFig,'Children'),'Estimate of wave pseudo-k from AWT (log_{10}, J\cdotkg^{-1})')
+            [wavePseudoTurbFig,wavePseudoTurbAx,wavePseudoTurbCont] = plotTKE(bedRelPseudoTKE(:,burstStartIndex:burstEndIndex),plotParams);
+            title(wavePseudoTurbAx,'Estimate of wave pseudo-k from AWT (log_{10}, J\cdotkg^{-1})')
         end
 
 %First the error vs. the statistical-only filtered wave condition. As some

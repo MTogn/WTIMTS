@@ -17,7 +17,7 @@ switch nargout
         contourf(timeArr',depthArr',log10(tempTKE'),'LineStyle','none');
     otherwise
         figHand = figure;
-        [dummy,contourHand] = contourf(timeArr',depthArr',log10(tempTKE'),'LineStyle','none');
+        [dummy,contourHand] = contourf(timeArr',depthArr',log10(tempTKE),'LineStyle','none');
         axHand = gca;
 end
 colorbar
