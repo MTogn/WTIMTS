@@ -6,10 +6,10 @@
 makePlots = true;
 %Not all cases need mean flow data, or may have mean flow data already
 %calculated; this section is therefore controlled with a flag.
-calcMeanFlowFlag = false;
+calcMeanFlowFlag = true;
 %calcErrorFlag tells the code whether to calculate the error between
 %analytic wave pseudo-TKE estimates and the estimates from the filters.
-calcErrorFlag = false;
+calcErrorFlag = true;
 
 %Preallocate the whole-record variables based on the number of bursts being
 %analysed
@@ -54,30 +54,33 @@ filterParameters.maxSwellFreq = (1/3);
 filterParameters.wsstWaveThreshold = 0.02;
 
 %%
-    switch calcMeanFlowFlag
-        case 1
-            %velLat and velLong are the lateral and longitudinal velocities
-            %relative to the ADCP i.e., the device-relative y- and
-            %x-velocities.
-            velLat = nan(maxBinNo,burstEndIndex);
-            velLong = nan(maxBinNo,burstEndIndex);
-            velMag = nan(maxBinNo,burstEndIndex);
-            velDirn = nan(maxBinNo,burstEndIndex);
-            for burstCtr = burstStartIndex:burstEndIndex
-                burstLoading
 
-                burstMeanFlow = calcMeanFlowProperties(burstBeamVelocities,burstHeadingRaw,paramStruc);
-                velLong(1:burstMaxBins(burstCtr),burstCtr) = burstMeanFlow.uMean(1:burstMaxBins(burstCtr));
-                velLat(1:burstMaxBins(burstCtr),burstCtr) = burstMeanFlow.vMean(1:burstMaxBins(burstCtr));
-                velMag(1:burstMaxBins(burstCtr),burstCtr) = sqrt(velLong(1:burstMaxBins(burstCtr),burstCtr).^2 + velLat(1:burstMaxBins(burstCtr),burstCtr).^2);
-                velDirn(1:burstMaxBins(burstCtr),burstCtr) = burstMeanFlow.flowHeadingMean;
+switch calcMeanFlowFlag
+    case 1
+        %velLat and velLong are the lateral and longitudinal velocities
+        %relative to the ADCP i.e., the device-relative y- and
+        %x-velocities.
+        velLat = nan(maxBinNo,burstEndIndex);
+        velLong = nan(maxBinNo,burstEndIndex);
+        velMag = nan(maxBinNo,burstEndIndex);
+        velDirn = nan(maxBinNo,burstEndIndex);
+        for burstCtr = burstStartIndex:burstEndIndex
+            burstLoading
 
-                if rem(burstCtr,10) == 0,
-                    fprintf("Burst # is %d \r",burstCtr)
-                end
+            burstMeanFlow = calcMeanFlowProperties(burstBeamVelocities,burstHeadingRaw,paramStruc);
+            velLong(1:burstMaxBins(burstCtr),burstCtr) = burstMeanFlow.uMean(1:burstMaxBins(burstCtr));
+            velLat(1:burstMaxBins(burstCtr),burstCtr) = burstMeanFlow.vMean(1:burstMaxBins(burstCtr));
+            velMag(1:burstMaxBins(burstCtr),burstCtr) = sqrt(velLong(1:burstMaxBins(burstCtr),burstCtr).^2 + velLat(1:burstMaxBins(burstCtr),burstCtr).^2);
+            velDirn(1:burstMaxBins(burstCtr),burstCtr) = burstMeanFlow.flowHeadingMean;
 
+            if rem(burstCtr,10) == 0,
+                fprintf("Burst # is %d \r",burstCtr)
             end
-    end
+
+        end
+
+        save([paramStruc.dataLocation 'burstMeanVelsDirs'],'velLong','velLat','velMag','velDirn');
+end
 %%
 %Burst loop
 for burstCtr = burstStartIndex:burstEndIndex
@@ -185,63 +188,66 @@ plotParams.meanSurfRelDepthVec = paramStruc.binVertSize*(0:1:(maxNumBinsWithData
 % - Double-filtered estimate of true turbulent TKE
 % - Double-filtered estimate of wave pseudo-TKE
 %including both wave and turbulent contributions
-if makePlots == true,
-    [wholeRecordTKEFig,wholeRecordTKEAx,wholeRecordTKECont] = plotTKE(wholeRecordADCPTKE(burstStartIndex:burstEndIndex,1:maxNumBinsWithData),plotParams);
-    title(wholeRecordTKEAx,'Unfiltered ADCP estimate of TKE')
-    
-    [EOFOnlyTurbFig,EOFOnlyTurbAx,EOFOnlyTurbCont] = plotTKE(bedRelTKETurb(burstStartIndex:burstEndIndex,:),plotParams);
-    title(EOFOnlyTurbAx,'EOF-only estimate of turbulent k (log_{10}, J\cdotkg^{-1})')
-    
-    [EOFOnlyWaveFig,EOFOnlyWaveAx,EOFOnlyWaveCont] = plotTKE(bedRelTKEWave(burstStartIndex:burstEndIndex,:),plotParams);
-    title(EOFOnlyWaveAx,'EOF-only estimate of wave pseudo-k (log_{10}, J\cdotkg^{-1})')
-    
-    [WSSTOnlyTurbFig,WSSTOnlyTurbAx,WSSTOnlyTurbCont] = plotTKE(specFilterPassedTKE(burstStartIndex:burstEndIndex,1:maxNumBinsWithData),plotParams);
-    title(WSSTOnlyTurbAx,'WSST-only estimate of turbulent k (log_{10}, J\cdotkg^{-1})')
-    
-    [WSSTOnlyWaveFig,WSSTOnlyWaveAx,WSSTOnlyWaveCont] = plotTKE(specFilterStoppedTKE(burstStartIndex:burstEndIndex,1:maxNumBinsWithData),plotParams);
-    title(WSSTOnlyWaveAx,'WSST-only estimate of wave pseudo-k (log_{10}, J\cdotkg^{-1})')
+switch makePlots
+    case 1
+        [wholeRecordTKEFig,wholeRecordTKEAx,wholeRecordTKECont] = plotTKE(wholeRecordADCPTKE(burstStartIndex:burstEndIndex,1:maxNumBinsWithData),plotParams);
+        title(wholeRecordTKEAx,'Unfiltered ADCP estimate of TKE')
 
-    [bothFilterTurbFig,bothFilterTurbAx,bothFilterTurbCont] = plotTKE(bedRelDblFilteredTKETurb(burstStartIndex:burstEndIndex,:),plotParams);
-    title(bothFilterTurbAx,'Estimate of turbulent k with both filters (log_{10}, J\cdotkg^{-1})')
-    
-    [bothFilterWaveFig,bothFilterWaveAx,bothFilterWaveCont] = plotTKE(bedRelDblFilteredTKEWave(burstStartIndex:burstEndIndex,:),plotParams);
-    title(bothFilterWaveAx,'Estimate of wave pseudo-k with both filters (log_{10}, J\cdotkg^{-1})')
+        [EOFOnlyTurbFig,EOFOnlyTurbAx,EOFOnlyTurbCont] = plotTKE(bedRelTKETurb(burstStartIndex:burstEndIndex,:),plotParams);
+        title(EOFOnlyTurbAx,'EOF-only estimate of turbulent k (log_{10}, J\cdotkg^{-1})')
+
+        [EOFOnlyWaveFig,EOFOnlyWaveAx,EOFOnlyWaveCont] = plotTKE(bedRelTKEWave(burstStartIndex:burstEndIndex,:),plotParams);
+        title(EOFOnlyWaveAx,'EOF-only estimate of wave pseudo-k (log_{10}, J\cdotkg^{-1})')
+
+        [WSSTOnlyTurbFig,WSSTOnlyTurbAx,WSSTOnlyTurbCont] = plotTKE(specFilterPassedTKE(burstStartIndex:burstEndIndex,1:maxNumBinsWithData),plotParams);
+        title(WSSTOnlyTurbAx,'WSST-only estimate of turbulent k (log_{10}, J\cdotkg^{-1})')
+
+        [WSSTOnlyWaveFig,WSSTOnlyWaveAx,WSSTOnlyWaveCont] = plotTKE(specFilterStoppedTKE(burstStartIndex:burstEndIndex,1:maxNumBinsWithData),plotParams);
+        title(WSSTOnlyWaveAx,'WSST-only estimate of wave pseudo-k (log_{10}, J\cdotkg^{-1})')
+
+        [bothFilterTurbFig,bothFilterTurbAx,bothFilterTurbCont] = plotTKE(bedRelDblFilteredTKETurb(burstStartIndex:burstEndIndex,:),plotParams);
+        title(bothFilterTurbAx,'Estimate of turbulent k with both filters (log_{10}, J\cdotkg^{-1})')
+
+        [bothFilterWaveFig,bothFilterWaveAx,bothFilterWaveCont] = plotTKE(bedRelDblFilteredTKEWave(burstStartIndex:burstEndIndex,:),plotParams);
+        title(bothFilterWaveAx,'Estimate of wave pseudo-k with both filters (log_{10}, J\cdotkg^{-1})')
 end
 
 %%
-if saveDataFlag == true
-    saveVarsList = mkSaveVarsList;
-    save([paramStruc.saveDirectory paramStruc.saveFilename],saveVarsList{:});
+switch saveDataFlag
+    case 1
+        saveVarsList = mkSaveVarsList;
+        save([paramStruc.saveDirectory paramStruc.saveFilename],saveVarsList{:});
 end
 %%
 %This section of the code calculates or imports the expected wave
 %pseudo-TKE if it exists, and calculates the error vs. the filtered TKE.
-if calcErrorFlag == true,
+switch calcErrorFlag
+    case 1
     
-    anycWavePseudoTKE = calcApparentWaveTKE([burstStartIndex burstEndIndex],paramStruc);
-    bedRelPseudoTKE = wholeRecordSurf2Bed(anycWavePseudoTKE,burstMaxBins,burstStartIndex,burstEndIndex);
-    if makePlots == true,
-        [wavePseudoTurbFig,wavePseudoTurbCont] = plotTKE(bedRelPseudoTKE(burstStartIndex:burstEndIndex,:),plotParams);
-        title(get(wavePseudoTurbFig,'Children'),'Estimate of wave pseudo-k from AWT (log_{10}, J\cdotkg^{-1})')
-    end
-    
+        anycWavePseudoTKE = calcApparentWaveTKE([burstStartIndex burstEndIndex],paramStruc);
+        bedRelPseudoTKE = wholeRecordSurf2Bed(anycWavePseudoTKE,burstMaxBins,burstStartIndex,burstEndIndex);
+        if makePlots == true,
+            [wavePseudoTurbFig,wavePseudoTurbCont] = plotTKE(bedRelPseudoTKE(burstStartIndex:burstEndIndex,:),plotParams);
+            title(get(wavePseudoTurbFig,'Children'),'Estimate of wave pseudo-k from AWT (log_{10}, J\cdotkg^{-1})')
+        end
+
 %First the error vs. the statistical-only filtered wave condition. As some
-%initial bursts had to be excluded from the EOF analysis, the array of EOF
+%initia bursts had to be excluded from the EOF analysis, the array of EOF
 %estimates of wave pseudo-TKE (surfRelFilteredTKEWave) has to be padded to
 %match the dimension of the calculated pseudo-TKE.
-    [EOFOnlyRelError,EOFOnlyAbsError] = TKEArrayErrorCalc([nan(burstStartIndex - 1,size(surfRelTKEWave,2)); surfRelTKEWave],anycWavePseudoTKE,[burstStartIndex burstEndIndex]);
-    
+        [EOFOnlyRelError,EOFOnlyAbsError] = TKEArrayErrorCalc([nan(burstStartIndex - 1,size(surfRelTKEWave,2)); surfRelTKEWave],anycWavePseudoTKE,[burstStartIndex burstEndIndex]);
+
 %To get the error calculation for the spectral-only filtered estimate of
 %wave pseudo-TKE, we first need to zero to the surface.
-    wsstOnlySurfZeroWaveTKE = wholeRecordBed2Surf(specFilterStoppedTKE,burstMaxBins,burstStartIndex,burstEndIndex);
-    [WSSTOnlyRelError,WSSTOnlyAbsError] = TKEArrayErrorCalc(wsstOnlySurfZeroWaveTKE,anycWavePseudoTKE,[burstStartIndex burstEndIndex]);
-    
+        wsstOnlySurfZeroWaveTKE = wholeRecordBed2Surf(specFilterStoppedTKE,burstMaxBins,burstStartIndex,burstEndIndex);
+        [WSSTOnlyRelError,WSSTOnlyAbsError] = TKEArrayErrorCalc(wsstOnlySurfZeroWaveTKE,anycWavePseudoTKE,[burstStartIndex burstEndIndex]);
+
 %The double-filtered wave pseudo-TKE is obtained by taking the WSST
 %filtered wave pseudo-TKE, and then adding the fraction of the remainder
 %attributed to wave action by the subsequent EOF filter. As in the EOF-only
 %case, this requires some initial padding to account for the bursts
 %excluded in the EOF analysis.
-    bothFilterSurfZeroWaveTKE = wsstOnlySurfZeroWaveTKE + [nan(burstStartIndex - 1,size(surfRelFilterPassedTKEWave,2)); surfRelFilterPassedTKEWave];
-    [bothFilterRelError,bothFilterAbsError] = TKEArrayErrorCalc(bothFilterSurfZeroWaveTKE,anycWavePseudoTKE,[burstStartIndex burstEndIndex]);
+        bothFilterSurfZeroWaveTKE = wsstOnlySurfZeroWaveTKE + [nan(burstStartIndex - 1,size(surfRelFilterPassedTKEWave,2)); surfRelFilterPassedTKEWave];
+        [bothFilterRelError,bothFilterAbsError] = TKEArrayErrorCalc(bothFilterSurfZeroWaveTKE,anycWavePseudoTKE,[burstStartIndex burstEndIndex]);
 
 end
