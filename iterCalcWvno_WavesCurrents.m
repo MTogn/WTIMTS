@@ -42,7 +42,7 @@ kappaOld = (gravAccel + 2*observedFreq*currSpeed*cos(waveCurrAngle)) - sqrt(grav
 kappaOld = kappaOld/(2*(currSpeed^2)*(cos(waveCurrAngle)^2));
 %This should not be complex, so set it to a typical order-of-magnitude
 %guess if it is.
-if imag(kappaOld) ~= 0, kappaOld = 0.1, end
+if imag(kappaOld) ~= 0, kappaOld = 0.1; end
 
 %This is the main iteration loop
 iterCtr = 1;

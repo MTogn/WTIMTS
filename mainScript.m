@@ -3,10 +3,10 @@
 
 %makePlots tells the code whether to plot results as they are calculated or
 %not.
-makePlots = true;
+makePlots = false;
 %Not all cases need mean flow data, or may have mean flow data already
 %calculated; this section is therefore controlled with a flag.
-calcMeanFlowFlag = true;
+calcMeanFlowFlag = false;
 %calcErrorFlag tells the code whether to calculate the error between
 %analytic wave pseudo-TKE estimates and the estimates from the filters.
 calcErrorFlag = true;
@@ -36,7 +36,7 @@ dataPreprocessing
 %the save location
 saveDataFlag = true;
 paramStruc.saveDirectory = 'C:\Users\michael\Documents\ADCP\NWDZ_north\Results\';
-paramStruc.saveFilename = 'completeWorkspace0p9Deep15Wide.mat';
+paramStruc.saveFilename = 'completeWorkspace0p9Deep10Wide.mat';
 
 %Preallocate whole-record variables whose size depends on both the number
 %of bursts and the number of bins.
@@ -48,7 +48,7 @@ specFilterPassedTKE = nan(burstEndIndex,maxBinNo);
 %set immediately in advance of the main loop; this may be better moved to a
 %general "initialise values" script, but otoh the fewer scripts that have
 %to be modified by a user the better.
-filterParameters.halfWidthPercent = 7.5;
+filterParameters.halfWidthPercent = 5;
 filterParameters.filterDepth = 0.9;
 filterParameters.maxSwellFreq = (1/3);
 filterParameters.wsstWaveThreshold = 0.02;
@@ -80,6 +80,11 @@ switch calcMeanFlowFlag
         end
 
         save([paramStruc.dataLocation 'burstMeanVelsDirs'],'velLong','velLat','velMag','velDirn');
+    
+    case 0
+        if exist([paramStruc.dataLocation 'burstMeanVelsDirs'],'file')
+            load([paramStruc.dataLocation 'burstMeanVelsDirs'])
+        end
 end
 %%
 %Burst loop
@@ -101,11 +106,11 @@ for burstCtr = burstStartIndex:burstEndIndex
     end
     
     %Calculate TKE for unfiltered burst velocities
-    wholeRecordADCPTKE(burstCtr,1:burstMaxBins(burstCtr)) = calcBurst4BeamTKE(burstBeamVelocities,paramStruc);
+    wholeRecordADCPTKE(1:burstMaxBins(burstCtr),burstCtr) = calcBurst4BeamTKE(burstBeamVelocities,paramStruc);
     
     %Calculate TKE for filtered burst velocities
-    specFilterStoppedTKE(burstCtr,1:burstMaxBins(burstCtr)) = calcBurst4BeamTKE(specFilterStoppedVelocities,paramStruc);
-    specFilterPassedTKE(burstCtr,1:burstMaxBins(burstCtr)) = calcBurst4BeamTKE(specFilterPassedVelocities,paramStruc);
+    specFilterStoppedTKE(1:burstMaxBins(burstCtr),burstCtr) = calcBurst4BeamTKE(specFilterStoppedVelocities,paramStruc);
+    specFilterPassedTKE(1:burstMaxBins(burstCtr),burstCtr) = calcBurst4BeamTKE(specFilterPassedVelocities,paramStruc);
     
     if rem(burstCtr,10) == 0,
         fprintf("Burst # is %d \r",burstCtr)
@@ -213,12 +218,6 @@ switch makePlots
 end
 
 %%
-switch saveDataFlag
-    case 1
-        saveVarsList = mkSaveVarsList;
-        save([paramStruc.saveDirectory paramStruc.saveFilename],saveVarsList{:});
-end
-%%
 %This section of the code calculates or imports the expected wave
 %pseudo-TKE if it exists, and calculates the error vs. the filtered TKE.
 switch calcErrorFlag
@@ -236,11 +235,15 @@ switch calcErrorFlag
 %estimates of wave pseudo-TKE (surfRelFilteredTKEWave) has to be padded to
 %match the dimension of the calculated pseudo-TKE.
         [EOFOnlyRelError,EOFOnlyAbsError] = TKEArrayErrorCalc([nan(burstStartIndex - 1,size(surfRelTKEWave,2)); surfRelTKEWave],anycWavePseudoTKE,[burstStartIndex burstEndIndex]);
+        EOFOnlyAbsErrorCond = errorECConditional(EOFOnlyAbsError,TKEExpanCoeffs(:,1),[burstStartIndex burstEndIndex],0);
+        EOFOnlyRelErrorCond = errorECConditional(EOFOnlyRelError,TKEExpanCoeffs(:,1),[burstStartIndex burstEndIndex],0);
 
 %To get the error calculation for the spectral-only filtered estimate of
 %wave pseudo-TKE, we first need to zero to the surface.
         wsstOnlySurfZeroWaveTKE = wholeRecordBed2Surf(specFilterStoppedTKE,burstMaxBins,burstStartIndex,burstEndIndex);
         [WSSTOnlyRelError,WSSTOnlyAbsError] = TKEArrayErrorCalc(wsstOnlySurfZeroWaveTKE,anycWavePseudoTKE,[burstStartIndex burstEndIndex]);
+        WSSTOnlyAbsErrorCond = errorECConditional(WSSTOnlyAbsError,TKEExpanCoeffs(:,1),[burstStartIndex burstEndIndex],0);
+        WSSTOnlyRelErrorCond = errorECConditional(WSSTOnlyRelError,TKEExpanCoeffs(:,1),[burstStartIndex burstEndIndex],0);
 
 %The double-filtered wave pseudo-TKE is obtained by taking the WSST
 %filtered wave pseudo-TKE, and then adding the fraction of the remainder
@@ -249,5 +252,27 @@ switch calcErrorFlag
 %excluded in the EOF analysis.
         bothFilterSurfZeroWaveTKE = wsstOnlySurfZeroWaveTKE + [nan(burstStartIndex - 1,size(surfRelFilterPassedTKEWave,2)); surfRelFilterPassedTKEWave];
         [bothFilterRelError,bothFilterAbsError] = TKEArrayErrorCalc(bothFilterSurfZeroWaveTKE,anycWavePseudoTKE,[burstStartIndex burstEndIndex]);
+        bothFilterAbsErrorCond = errorECConditional(bothFilterAbsError,TKEExpanCoeffs(:,1),[burstStartIndex burstEndIndex],0);
+        bothFilterRelErrorCond = errorECConditional(bothFilterRelError,TKEExpanCoeffs(:,1),[burstStartIndex burstEndIndex],0);
 
+end
+
+%%
+switch saveDataFlag
+    case 1
+        saveVarsList = mkSaveVarsList;
+        %Not every variable may exist in every case, so this conditional append is
+%needed to avoid errors where there are some variables not present.
+        for varCtr = 1:length(saveVarsList)
+            switch exist(saveVarsList{varCtr}),
+                case 1
+
+                    switch exist([paramStruc.saveDirectory paramStruc.saveFilename])
+                        case 0
+                            save([paramStruc.saveDirectory paramStruc.saveFilename],saveVarsList{varCtr});
+                        case 1
+                            save([paramStruc.saveDirectory paramStruc.saveFilename],saveVarsList{varCtr},'-append');
+                    end
+            end
+        end
 end
