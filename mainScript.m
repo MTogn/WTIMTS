@@ -15,10 +15,10 @@ calcErrorFlag = true;
 %analysed
 burstStartIndex = 50;
 burstEndIndex = 8958;
-wholeRecordEnsNos = nan(burstEndIndex,2);
-wholeRecordDatenums = nan(burstEndIndex,2);
-burstMeanDepths = nan(burstEndIndex,1);
-burstMaxBins = nan(burstEndIndex,1);
+wholeRecordEnsNos = nan(2,burstEndIndex);
+wholeRecordDatenums = nan(2,burstEndIndex);
+burstMeanDepths = nan(1,burstEndIndex);
+burstMaxBins = nan(1,burstEndIndex);
 %It is helpful to know the maximum possible number of bins in advance to
 %aid with preprocessing; if you don't know err on the side of caution
 %(i.e., a larger number of bins) to avoid assigning data to arrays that are
@@ -40,9 +40,9 @@ paramStruc.saveFilename = 'completeWorkspace0p9Deep10Wide.mat';
 
 %Preallocate whole-record variables whose size depends on both the number
 %of bursts and the number of bins.
-wholeRecordADCPTKE = nan(burstEndIndex,maxBinNo);
-specFilterStoppedTKE = nan(burstEndIndex,maxBinNo);
-specFilterPassedTKE = nan(burstEndIndex,maxBinNo);
+wholeRecordADCPTKE = nan(maxBinNo,burstEndIndex);
+specFilterStoppedTKE = nan(maxBinNo,burstEndIndex);
+specFilterPassedTKE = nan(maxBinNo,burstEndIndex);
 
 %If there are any parameters to be set for the filter, they can be
 %set immediately in advance of the main loop; this may be better moved to a
@@ -137,10 +137,10 @@ surfRelADCPTKE = wholeRecordBed2Surf(wholeRecordADCPTKE,burstMaxBins,burstStartI
 %decomposition, plus some data hygiene and normalisation. Small EOF numbers
 %can lead to the first EOFs/ECs being the opposite sign to what is expected
 %- reason for this is unclear. Stick to larger numbers for now.
-numEOFs = size(surfRelADCPTKE,2);
-[TKEEigenvals,TKEEigenvalsNormd,TKEEOFs,TKEExpanCoeffs,TKETruncnErr] = EOFWrapper(surfRelADCPTKE(burstStartIndex:burstEndIndex,:),numEOFs);
+numEOFs = size(surfRelADCPTKE,1);
+[TKEEigenvals,TKEEigenvalsNormd,TKEEOFs,TKEExpanCoeffs,TKETruncnErr] = EOFWrapper(surfRelADCPTKE(:,burstStartIndex:burstEndIndex)',numEOFs);
 %EOF decomposition of the unfiltered ADCP estimate of TKE
-[surfRelTKETurb,surfRelTKEWave] = singleEOFModeTKEDecomposition(surfRelADCPTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1));
+[surfRelTKETurb,surfRelTKEWave] = singleEOFModeTKEDecomposition(surfRelADCPTKE(:,burstStartIndex:burstEndIndex)',TKEEOFs(:,1),TKEExpanCoeffs(:,1));
 
 %Now repeat the statistical filter for the TKE dataset that has already
 %undergone spectral filtering to remove (part of) the wave pseudo-TKE.

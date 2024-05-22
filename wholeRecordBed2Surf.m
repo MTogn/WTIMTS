@@ -6,12 +6,16 @@
 %times when the water column is at its deepest - this is unavoidable, as
 %EOF analysis requires the same number of sample points in the space
 %discretisation at all times.
-function surfRelativeVariable = wholeRecordBed2Surf(bedRelativeVariable,binsByBurst,burstStartNum,burstEndNum)
+function surfRelativeVariable = wholeRecordBed2Surf(bedRelativeVariable,binsByBurst,burstStartIndex,burstEndIndex)
 
-surfRelativeVariable = nan(size(bedRelativeVariable,1),min(binsByBurst));
-for burstCtr = burstStartNum:burstEndNum
+if size(bedRelativeVariable,1) == burstEndIndex & size(bedRelativeVariable,2) ~= burstEndIndex,
+    bedRelativeVariable = bedRelativeVariable';
+end
+
+surfRelativeVariable = nan(min(binsByBurst),size(bedRelativeVariable,2));
+for burstCtr = burstStartIndex:burstEndIndex
     binsMoreThanMin = binsByBurst(burstCtr) - min(binsByBurst);
-    surfRelativeVariable(burstCtr,:) = bedRelativeVariable(burstCtr,(binsMoreThanMin + 1):binsByBurst(burstCtr));
+    surfRelativeVariable(:,burstCtr) = bedRelativeVariable((binsMoreThanMin + 1):binsByBurst(burstCtr),burstCtr);
 end
 
 end
