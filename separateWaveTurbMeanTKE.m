@@ -4,8 +4,8 @@
 %the two is when the EC of the first EOF is <0.
 function [meanTKEWave,meanTKETurb] = separateWaveTurbMeanTKE(TKE,EC_1stEOF);
 
-meanTKETotal = mean(TKE,1,'omitnan');
-meanTKETurb = mean(TKE(EC_1stEOF < 0,:),1,'omitnan');
+meanTKETotal = mean(TKE,2,'omitnan');
+meanTKETurb = mean(TKE(:,EC_1stEOF < 0),2,'omitnan');
 meanTKEWave = meanTKETotal - meanTKETurb;
 
 end

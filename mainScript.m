@@ -36,7 +36,7 @@ dataPreprocessing
 %the save location
 saveDataFlag = true;
 paramStruc.saveDirectory = 'C:\Users\michael\Documents\ADCP\NWDZ_north\Results\';
-paramStruc.saveFilename = 'completeWorkspace0p9Deep10Wide.mat';
+paramStruc.saveFilename = 'completeWorkspace1p2Deep10Wide.mat';
 
 %Preallocate whole-record variables whose size depends on both the number
 %of bursts and the number of bins.
@@ -49,7 +49,7 @@ specFilterPassedTKE = nan(maxBinNo,burstEndIndex);
 %general "initialise values" script, but otoh the fewer scripts that have
 %to be modified by a user the better.
 filterParameters.halfWidthPercent = 5;
-filterParameters.filterDepth = 0.9;
+filterParameters.filterDepth = 1.2;
 filterParameters.maxSwellFreq = (1/3);
 filterParameters.wsstWaveThreshold = 0.02;
 
@@ -140,30 +140,32 @@ surfRelADCPTKE = wholeRecordBed2Surf(wholeRecordADCPTKE,burstMaxBins,burstStartI
 numEOFs = size(surfRelADCPTKE,1);
 [TKEEigenvals,TKEEigenvalsNormd,TKEEOFs,TKEExpanCoeffs,TKETruncnErr] = EOFWrapper(surfRelADCPTKE(:,burstStartIndex:burstEndIndex)',numEOFs);
 %EOF decomposition of the unfiltered ADCP estimate of TKE
-[surfRelTKETurb,surfRelTKEWave] = singleEOFModeTKEDecomposition(surfRelADCPTKE(:,burstStartIndex:burstEndIndex)',TKEEOFs(:,1),TKEExpanCoeffs(:,1));
+[surfRelTKETurb,surfRelTKEWave] = singleEOFModeTKEDecomposition(surfRelADCPTKE(:,burstStartIndex:burstEndIndex),TKEEOFs(:,1),TKEExpanCoeffs(:,1));
 
 %Now repeat the statistical filter for the TKE dataset that has already
 %undergone spectral filtering to remove (part of) the wave pseudo-TKE.
 surfRelFilterPassedTKE = wholeRecordBed2Surf(specFilterPassedTKE,burstMaxBins,burstStartIndex,burstEndIndex);
-numEOFs = size(surfRelFilterPassedTKE,2);
-[TKEEigenvals,TKEEigenvalsNormd,TKEEOFs,TKEExpanCoeffs,TKETruncnErr] = EOFWrapper(surfRelFilterPassedTKE(burstStartIndex:burstEndIndex,:),numEOFs);
+numEOFs = size(surfRelFilterPassedTKE,1);
+%Note that the EOF modules called here look for mode shapes along the
+%second rank, so it is passed the transpose of the TKE as an argument.
+[TKEEigenvals,TKEEigenvalsNormd,TKEEOFs,TKEExpanCoeffs,TKETruncnErr] = EOFWrapper(surfRelFilterPassedTKE(:,burstStartIndex:burstEndIndex)',numEOFs);
 %EOF decomposition of the spectrally-filtered ADCP estimate of TKE
-[surfRelFilterPassedTKETurb,surfRelFilterPassedTKEWave] = singleEOFModeTKEDecomposition(surfRelFilterPassedTKE(burstStartIndex:burstEndIndex,:),TKEEOFs(:,1),TKEExpanCoeffs(:,1));
+[surfRelFilterPassedTKETurb,surfRelFilterPassedTKEWave] = singleEOFModeTKEDecomposition(surfRelFilterPassedTKE(:,burstStartIndex:burstEndIndex),TKEEOFs(:,1),TKEExpanCoeffs(:,1));
 
 %This part of the routine takes the outputs of the EOF decomposition and
 %returns it to a bed-zeroed format. Since some data was lost or excerpted
 %to make the original inputs to the EOF routine, we have to pad the output
 %with nans at the bed AND at the start, if there are any initial bursts
 %that are excluded.
-bedRelTKETurb = wholeRecordSurf2Bed([nan(burstStartIndex - 1,size(surfRelTKETurb,2)); surfRelTKETurb],burstMaxBins,burstStartIndex,burstEndIndex);
-bedRelTKEWave = wholeRecordSurf2Bed([nan(burstStartIndex - 1,size(surfRelTKEWave,2)); surfRelTKEWave],burstMaxBins,burstStartIndex,burstEndIndex);
+bedRelTKETurb = wholeRecordSurf2Bed([nan(size(surfRelTKETurb,1),burstStartIndex - 1) surfRelTKETurb],burstMaxBins,burstStartIndex,burstEndIndex);
+bedRelTKEWave = wholeRecordSurf2Bed([nan(size(surfRelTKEWave,1),burstStartIndex - 1) surfRelTKEWave],burstMaxBins,burstStartIndex,burstEndIndex);
 %We also bed-zero the EOF decomposition of the double-filtered TKE arrays.
-bedRelDblFilteredTKETurb = wholeRecordSurf2Bed([nan(burstStartIndex - 1,size(surfRelFilterPassedTKETurb,2)); surfRelFilterPassedTKETurb],burstMaxBins,burstStartIndex,burstEndIndex);
-bedRelDblFilteredTKEWave = wholeRecordSurf2Bed([nan(burstStartIndex - 1,size(surfRelFilterPassedTKEWave,2)); surfRelFilterPassedTKEWave],burstMaxBins,burstStartIndex,burstEndIndex);
+bedRelDblFilteredTKETurb = wholeRecordSurf2Bed([nan(size(surfRelFilterPassedTKETurb,1),burstStartIndex - 1) surfRelFilterPassedTKETurb],burstMaxBins,burstStartIndex,burstEndIndex);
+bedRelDblFilteredTKEWave = wholeRecordSurf2Bed([nan(size(surfRelFilterPassedTKEWave,1),burstStartIndex - 1) surfRelFilterPassedTKEWave],burstMaxBins,burstStartIndex,burstEndIndex);
 %To get the double-filtered estimate of wave pseudo-TKE, we must add
 %together the spectral-filter-stopped TKE component and the EOF estimate of
 %the wave portion of the spectral-filter-passed TKE component.
-bedRelDblFilteredTKEWave = bedRelDblFilteredTKEWave + specFilterStoppedTKE(:,1:max(burstMaxBins));
+bedRelDblFilteredTKEWave = bedRelDblFilteredTKEWave + specFilterStoppedTKE(1:max(burstMaxBins),:);
 
 %%
 %Some preprocessing of date/depth arrays so we have a unified way of
@@ -172,7 +174,7 @@ minNumBinsWithData = size(surfRelADCPTKE,2);
 maxNumBinsWithData = max(burstMaxBins(burstStartIndex:burstEndIndex));
 %The datenum record must be a column vector
 if size(wholeRecordDatenums,1) == 1, wholeRecordDatenums = wholeRecordDatenums'; end
-plotParams.timeVec = wholeRecordDatenums(burstStartIndex:burstEndIndex,1);
+plotParams.timeVec = wholeRecordDatenums(1,burstStartIndex:burstEndIndex);
 %recordMeanDepth is the mean depth across all bursts; sidelobeDepth is the depth
 %range near the surface of the water column from which we cannot obtain
 %useful data due to sidelobe interference.
@@ -234,7 +236,7 @@ switch calcErrorFlag
 %initia bursts had to be excluded from the EOF analysis, the array of EOF
 %estimates of wave pseudo-TKE (surfRelFilteredTKEWave) has to be padded to
 %match the dimension of the calculated pseudo-TKE.
-        [EOFOnlyRelError,EOFOnlyAbsError] = TKEArrayErrorCalc([nan(burstStartIndex - 1,size(surfRelTKEWave,2)); surfRelTKEWave],anycWavePseudoTKE,[burstStartIndex burstEndIndex]);
+        [EOFOnlyRelError,EOFOnlyAbsError] = TKEArrayErrorCalc([nan(size(surfRelTKEWave,1),burstStartIndex - 1) surfRelTKEWave],anycWavePseudoTKE,[burstStartIndex burstEndIndex]);
         EOFOnlyAbsErrorCond = errorECConditional(EOFOnlyAbsError,TKEExpanCoeffs(:,1),[burstStartIndex burstEndIndex],0);
         EOFOnlyRelErrorCond = errorECConditional(EOFOnlyRelError,TKEExpanCoeffs(:,1),[burstStartIndex burstEndIndex],0);
 
@@ -250,7 +252,7 @@ switch calcErrorFlag
 %attributed to wave action by the subsequent EOF filter. As in the EOF-only
 %case, this requires some initial padding to account for the bursts
 %excluded in the EOF analysis.
-        bothFilterSurfZeroWaveTKE = wsstOnlySurfZeroWaveTKE + [nan(burstStartIndex - 1,size(surfRelFilterPassedTKEWave,2)); surfRelFilterPassedTKEWave];
+        bothFilterSurfZeroWaveTKE = wsstOnlySurfZeroWaveTKE + [nan(size(surfRelFilterPassedTKEWave,1),burstStartIndex - 1) surfRelFilterPassedTKEWave];
         [bothFilterRelError,bothFilterAbsError] = TKEArrayErrorCalc(bothFilterSurfZeroWaveTKE,anycWavePseudoTKE,[burstStartIndex burstEndIndex]);
         bothFilterAbsErrorCond = errorECConditional(bothFilterAbsError,TKEExpanCoeffs(:,1),[burstStartIndex burstEndIndex],0);
         bothFilterRelErrorCond = errorECConditional(bothFilterRelError,TKEExpanCoeffs(:,1),[burstStartIndex burstEndIndex],0);

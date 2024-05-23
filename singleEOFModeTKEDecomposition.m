@@ -13,7 +13,7 @@
 %plotParams - structure containing time and depth vectors to make the
 %plots, if needed.
 
-function [TKETurb,TKEWave,figHand] = singleEOFModeTKEDecomposition(TKE,EOF1,EC1)
+function [TKETurb,TKEWave] = singleEOFModeTKEDecomposition(TKE,EOF1,EC1)
 
 %EOF can capture the time-varying pseudo-TKE introduced by wave action, but
 %it cannot capture any bias introduced to the mean TKE estimate. In order
@@ -27,8 +27,8 @@ function [TKETurb,TKEWave,figHand] = singleEOFModeTKEDecomposition(TKE,EOF1,EC1)
 %The time-mean portion of the wave TKE is constant throughout the whole
 %data record and the time-varying portion approximated by the EOF is simply
 %added on top of this.
-TKEWave = repmat(meanTKEWave,size(TKE,1),1);
-TKEWave = TKEWave + repmat(EOF1',size(TKE,1),1).*repmat(EC1,1,size(TKE,2));
+TKEWave = repmat(meanTKEWave,1,size(TKE,2));
+TKEWave = TKEWave + repmat(EOF1,1,size(TKE,2)).*repmat(EC1',size(TKE,1),1);
 TKETurb = TKE - TKEWave;
 
 end
