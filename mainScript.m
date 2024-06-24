@@ -36,7 +36,7 @@ dataPreprocessing
 %the save location
 saveDataFlag = true;
 paramStruc.saveDirectory = 'C:\Users\michael\Documents\ADCP\NWDZ_north\Results\';
-paramStruc.saveFilename = 'completeWorkspace1p2Deep10Wide.mat';
+paramStruc.saveFilename = 'completeWorkspace0p9Deep10Wide.mat';
 
 %Preallocate whole-record variables whose size depends on both the number
 %of bursts and the number of bins.
@@ -49,7 +49,7 @@ specFilterPassedTKE = nan(maxBinNo,burstEndIndex);
 %general "initialise values" script, but otoh the fewer scripts that have
 %to be modified by a user the better.
 filterParameters.halfWidthPercent = 5;
-filterParameters.filterDepth = 1.2;
+filterParameters.filterDepth = 0.9;
 filterParameters.maxSwellFreq = (1/3);
 filterParameters.wsstWaveThreshold = 0.02;
 
@@ -79,7 +79,7 @@ switch calcMeanFlowFlag
 
         end
 
-        save([paramStruc.dataLocation 'burstMeanVelsDirs'],'velLong','velLat','velMag','velDirn');
+        save([paramStruc.dataLocation 'burstMeanVelsDirs2Min'],'velLong','velLat','velMag','velDirn');
     
     case 0
         if exist([paramStruc.dataLocation 'burstMeanVelsDirs'],'file')
@@ -272,7 +272,7 @@ switch saveDataFlag
                     switch exist([paramStruc.saveDirectory paramStruc.saveFilename])
                         case 0
                             save([paramStruc.saveDirectory paramStruc.saveFilename],saveVarsList{varCtr});
-                        case 1
+                        case 2
                             save([paramStruc.saveDirectory paramStruc.saveFilename],saveVarsList{varCtr},'-append');
                     end
             end
